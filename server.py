@@ -53,6 +53,7 @@ def _load_db() -> dict:
             "licenses":       {},
             "hwid_blacklist": {},
             "failed_log":     [],
+            "discount_codes": {},
             "settings": {
                 "maintenance":     False,
                 "maintenance_msg": "El servicio está en mantenimiento. Vuelve pronto.",
@@ -69,6 +70,7 @@ def _ensure_keys(db: dict) -> dict:
     db.setdefault("licenses",       {})
     db.setdefault("hwid_blacklist", {})
     db.setdefault("failed_log",     [])
+    db.setdefault("discount_codes", {})
     db.setdefault("settings", {
         "maintenance":     False,
         "maintenance_msg": "El servicio está en mantenimiento. Vuelve pronto.",
@@ -495,6 +497,123 @@ def get_settings():
     return jsonify({"settings": db["settings"]})
 
 
+
+# ──══════════════════════════════════════════════════════════════
+#  RUTAS OWNER — CÓDIGOS DE DESCUENTO
+# ──══════════════════════════════════════════════════════════════
+
+@app.route("/api/discount_codes", methods=["GET"])
+@require_owner
+def list_discount_codes():
+    db = _ensure_keys(_load_db())
+    return jsonify({"codes": db["discount_codes"]})
+
+
+@app.route("/api/discount_codes/create", methods=["POST"])
+@require_owner
+def create_discount_code():
+    """
+    Body: {
+        code        : str   (ej. "VERANO25"),
+        discount    : float (porcentaje, ej. 25.0),
+        max_uses    : int   (0 = ilimitado),
+        expires_at  : str   (ISO date "2025-12-31", vacío = sin expiración),
+        plans       : list  (["basic","pro","lifetime"] — vacío = todos),
+        description : str   (nota interna)
+    }
+    """
+    data        = request.get_json(silent=True) or {}
+    code        = (data.get("code") or "").strip().upper()
+    discount    = float(data.get("discount", 0))
+    max_uses    = int(data.get("max_uses", 0))
+    expires_at  = (data.get("expires_at") or "").strip()
+    plans       = data.get("plans") or []
+    description = (data.get("description") or "").strip()
+
+    if not code:
+        return jsonify({"error": "El código no puede estar vacío."}), 400
+    if not (0 < discount <= 100):
+        return jsonify({"error": "El descuento debe estar entre 1 y 100."}), 400
+
+    db = _ensure_keys(_load_db())
+    if code in db["discount_codes"]:
+        return jsonify({"error": f"El código '{code}' ya existe."}), 400
+
+    db["discount_codes"][code] = {
+        "discount":    discount,
+        "max_uses":    max_uses,
+        "uses":        0,
+        "expires_at":  expires_at,
+        "plans":       [p.lower() for p in plans],
+        "description": description,
+        "active":      True,
+        "created_at":  datetime.utcnow().isoformat(),
+    }
+    _save_db(db)
+    return jsonify({"ok": True, "code": code})
+
+
+@app.route("/api/discount_codes/delete", methods=["POST"])
+@require_owner
+def delete_discount_code():
+    data = request.get_json(silent=True) or {}
+    code = (data.get("code") or "").strip().upper()
+    db   = _ensure_keys(_load_db())
+    if code not in db["discount_codes"]:
+        return jsonify({"error": "Código no encontrado."}), 404
+    del db["discount_codes"][code]
+    _save_db(db)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/discount_codes/toggle", methods=["POST"])
+@require_owner
+def toggle_discount_code():
+    data = request.get_json(silent=True) or {}
+    code = (data.get("code") or "").strip().upper()
+    db   = _ensure_keys(_load_db())
+    if code not in db["discount_codes"]:
+        return jsonify({"error": "Código no encontrado."}), 404
+    db["discount_codes"][code]["active"] = not db["discount_codes"][code].get("active", True)
+    _save_db(db)
+    return jsonify({"ok": True, "active": db["discount_codes"][code]["active"]})
+
+
+# ── Ruta PÚBLICA: validar un código desde el frontend (no consume uso) ──
+@app.route("/api/discount_codes/validate", methods=["POST"])
+def validate_discount_code():
+    """Body: { code: str, plan: str }"""
+    data = request.get_json(silent=True) or {}
+    code = (data.get("code") or "").strip().upper()
+    plan = (data.get("plan") or "").strip().lower()
+
+    if not code:
+        return jsonify({"valid": False, "message": "Código vacío."}), 400
+
+    db    = _ensure_keys(_load_db())
+    entry = db["discount_codes"].get(code)
+
+    if not entry:
+        return jsonify({"valid": False, "message": "Código no válido."})
+    if not entry.get("active", True):
+        return jsonify({"valid": False, "message": "Este código está desactivado."})
+    if entry["max_uses"] > 0 and entry["uses"] >= entry["max_uses"]:
+        return jsonify({"valid": False, "message": "Este código ha alcanzado el límite de usos."})
+    if entry.get("expires_at"):
+        try:
+            if date.fromisoformat(entry["expires_at"]) < date.today():
+                return jsonify({"valid": False, "message": "Este código ha expirado."})
+        except Exception:
+            pass
+    if entry.get("plans") and plan and plan not in entry["plans"]:
+        return jsonify({"valid": False, "message": f"Código no válido para el plan '{plan}'."})
+
+    return jsonify({
+        "valid":    True,
+        "discount": entry["discount"],
+        "message":  f"✓ {entry['discount']}% de descuento aplicado.",
+    })
+
 # ──══════════════════════════════════════════════════════════════
 #  ENTRY POINT
 # ──══════════════════════════════════════════════════════════════
@@ -556,8 +675,9 @@ def issue_public():
     email        = (data.get("email") or "").strip()
     days         = int(data.get("days", 30))
     license_type = (data.get("license_type") or "Basic").strip()
-    max_devices  = int(data.get("max_devices", 1))
-    order_id     = (data.get("paypal_order_id") or "").strip()
+    max_devices   = int(data.get("max_devices", 1))
+    order_id      = (data.get("paypal_order_id") or "").strip()
+    discount_code = (data.get("discount_code") or "").strip().upper()
 
     # ── Validaciones básicas ────────────────────────────────────
     if not username:
@@ -573,9 +693,27 @@ def issue_public():
     if order_id in _used_orders:
         return jsonify({"error": "Este pedido ya fue procesado."}), 400
 
-    # ── Rate limiting (reutiliza el de /verify) ──────────────────
+    # ── Rate limiting ────────────────────────────────────────────
     if _is_rate_limited(ip):
         return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
+
+    # ── Cargar DB y validar código de descuento ──────────────────
+    db               = _ensure_keys(_load_db())
+    applied_discount = 0.0
+    valid_code       = None
+
+    if discount_code:
+        dc = db["discount_codes"].get(discount_code)
+        if dc and dc.get("active", True):
+            plan_ok = not dc.get("plans") or license_type.lower() in dc["plans"]
+            uses_ok = dc["max_uses"] == 0 or dc["uses"] < dc["max_uses"]
+            exp_ok  = True
+            if dc.get("expires_at"):
+                try: exp_ok = date.fromisoformat(dc["expires_at"]) >= date.today()
+                except Exception: pass
+            if plan_ok and uses_ok and exp_ok:
+                applied_discount = dc["discount"]
+                valid_code       = discount_code
 
     # ── Verificación del pago con PayPal ─────────────────────────
     paypal_client_id = os.environ.get("PAYPAL_CLIENT_ID", "")
@@ -612,10 +750,11 @@ def issue_public():
                 .get("amount", {})
                 .get("value", "0")
             )
-            paid = float(paid_str)
-            expected = _expected_price(license_type, days)
+            paid       = float(paid_str)
+            base_price = _expected_price(license_type, days)
+            expected   = round(base_price * (1 - applied_discount / 100), 2)
 
-            if paid < expected - 0.01:   # margen de 1 céntimo por redondeos
+            if paid < expected - 0.01:
                 return jsonify({"error": f"Importe insuficiente (recibido €{paid:.2f}, esperado €{expected:.2f})."}), 402
 
         except Exception as e:
@@ -628,15 +767,19 @@ def issue_public():
     # ── Emitir licencia ──────────────────────────────────────────
     _used_orders.add(order_id)
 
-    max_devices = _MAX_DEVICES.get(license_type, 1)
-    key = generate_license(username, days, "")
-    exp = (date.today() + timedelta(days=days)).isoformat()
+    # Consumir uso del código de descuento
+    if valid_code and valid_code in db["discount_codes"]:
+        db["discount_codes"][valid_code]["uses"] += 1
 
-    db = _ensure_keys(_load_db())
+    max_devices   = _MAX_DEVICES.get(license_type, 1)
+    key           = generate_license(username, days, "")
+    exp           = (date.today() + timedelta(days=days)).isoformat()
+    note_discount = f" · Dto:{valid_code}({applied_discount}%)" if valid_code else ""
+
     db["licenses"][key] = {
         "username":      username,
         "expires":       exp,
-        "note":          f"Compra web · email:{email} · PayPal:{order_id[:16]}",
+        "note":          f"Compra web · email:{email} · PayPal:{order_id[:16]}{note_discount}",
         "license_type":  license_type,
         "max_devices":   max_devices,
         "bound_devices": [],

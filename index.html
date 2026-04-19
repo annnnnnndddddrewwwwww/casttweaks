@@ -1036,6 +1036,7 @@ footer {
         <div class="o-row"><span>Duración</span><span id="o-days"></span></div>
         <div class="o-row"><span>Base</span><span id="o-base"></span></div>
         <div class="o-row"><span>Extra</span><span id="o-extra"></span></div>
+        <div class="o-row" id="o-disc-row" style="display:none;color:#2bc47a"><span>Descuento</span><span id="o-disc-val"></span></div>
         <div class="o-row o-total">
           <span class="o-total-lbl">Total</span>
           <span class="o-total-num" id="o-total"></span>
@@ -1049,6 +1050,14 @@ footer {
       <div class="f-group">
         <label class="f-lbl">Usuario</label>
         <input class="f-inp" id="f-user" type="text" placeholder="TuNombreDeUsuario">
+      </div>
+      <div class="f-group">
+        <label class="f-lbl">Código de descuento <span style="font-family:var(--mono);font-size:10px;color:var(--white3);letter-spacing:1px">(opcional)</span></label>
+        <div style="display:flex;gap:8px">
+          <input class="f-inp" id="f-disc-code" type="text" placeholder="CÓDIGO25" style="text-transform:uppercase;flex:1;letter-spacing:2px">
+          <button onclick="applyDiscount()" style="background:linear-gradient(135deg,var(--purple),var(--magenta));color:#fff;border:none;border-radius:10px;padding:0 18px;font-family:var(--mono);font-size:11px;letter-spacing:1.5px;cursor:pointer;height:46px;flex-shrink:0">Aplicar</button>
+        </div>
+        <div id="disc-msg" style="font-family:var(--mono);font-size:11px;margin-top:6px;min-height:16px;letter-spacing:0.5px"></div>
       </div>
 
       <div class="pp-sep">
@@ -1087,7 +1096,8 @@ const PLANS = {
   pro:      { name:'Pro',      base:10,    xpm:3.5, days:30, col:'#e040fb', type:'pro',      devs:3 },
   lifetime: { name:'Lifetime', base:39.99, xpm:0,   days:36500, col:'#ff6d00', type:'lifetime', devs:5 }
 };
-let activePlan = null;
+let activePlan     = null;
+let activeDiscount = { code: '', pct: 0 };  // código de descuento activo
 
 // ══════════════════════════════════════════════════
 //  GSAP SETUP
@@ -1336,10 +1346,64 @@ function upd(pk, days) {
 }
 function sd(pk, d) { upd(pk, d); }
 
+// ──────────────── DESCUENTOS ────────────────
+function _recalcTotal() {
+  if (!activePlan) return;
+  const tot        = price(activePlan, PLANS[activePlan].days);
+  const discounted = activeDiscount.pct > 0
+    ? Math.max(0, tot * (1 - activeDiscount.pct / 100))
+    : tot;
+  document.getElementById('o-total').textContent = '€' + discounted.toFixed(2);
+  const row = document.getElementById('o-disc-row');
+  if (activeDiscount.pct > 0) {
+    row.style.display = 'flex';
+    document.getElementById('o-disc-val').textContent =
+      `-${activeDiscount.pct}%  (−€${(tot - discounted).toFixed(2)})`;
+  } else {
+    row.style.display = 'none';
+  }
+  buildPayPal(discounted, activePlan);
+}
+
+async function applyDiscount() {
+  const code = (document.getElementById('f-disc-code').value || '').trim().toUpperCase();
+  const msg  = document.getElementById('disc-msg');
+  if (!code) { msg.style.color = '#ff8fa3'; msg.textContent = '✘ Introduce un código.'; return; }
+  msg.style.color = '#888'; msg.textContent = 'Validando...';
+  try {
+    const r = await fetch(RENDER_URL + '/api/discount_codes/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, plan: activePlan })
+    });
+    const d = await r.json();
+    if (d.valid) {
+      activeDiscount = { code, pct: d.discount };
+      msg.style.color = '#2bc47a';
+      msg.textContent = d.message;
+    } else {
+      activeDiscount = { code: '', pct: 0 };
+      msg.style.color = '#ff8fa3';
+      msg.textContent = d.message || '✘ Código no válido.';
+    }
+    _recalcTotal();
+  } catch(e) {
+    msg.style.color = '#ff8fa3'; msg.textContent = '✘ Error al conectar con el servidor.';
+  }
+}
+
 // ──────────────── CHECKOUT ────────────────
 function openBuy(pk) {
-  activePlan = pk;
-  const p = PLANS[pk], tot = price(pk, p.days);
+  activePlan     = pk;
+  activeDiscount = { code: '', pct: 0 };
+  const dcField = document.getElementById('f-disc-code');
+  const dcMsg   = document.getElementById('disc-msg');
+  const dcRow   = document.getElementById('o-disc-row');
+  if (dcField) dcField.value = '';
+  if (dcMsg)   dcMsg.textContent = '';
+  if (dcRow)   dcRow.style.display = 'none';
+
+  const p   = PLANS[pk], tot = price(pk, p.days);
   const extra = pk === 'lifetime' ? 0 : Math.max(0, Math.floor((p.days - 30) / 30));
   const xCost = (tot - p.base).toFixed(2);
 
@@ -1359,7 +1423,6 @@ function openBuy(pk) {
   document.getElementById('overlay').classList.add('open');
 
   gsap.from('.modal', { scale: 0.9, opacity: 0, duration: 0.5, ease: 'elastic.out(1, 0.7)' });
-
   buildPayPal(tot, pk);
 }
 
@@ -1395,19 +1458,21 @@ function buildPayPal(amount, pk) {
       return actions.order.create({ purchase_units: [{ description: `CastTweaks® ${PLANS[pk].name}`, amount: { value: amount.toFixed(2), currency_code: 'EUR' } }] });
     },
     onApprove: async (data, actions) => {
-      try { const d = await actions.order.capture(); await genLicense(pk, document.getElementById('f-user').value.trim(), document.getElementById('f-email').value.trim(), d.id); }
-      catch (e) { showErr('✘ Error al procesar: ' + (e.message || e)); }
+      try {
+        const d = await actions.order.capture();
+        await genLicense(pk, document.getElementById('f-user').value.trim(), document.getElementById('f-email').value.trim(), d.id, activeDiscount.code);
+      } catch (e) { showErr('✘ Error al procesar: ' + (e.message || e)); }
     },
     onError: () => showErr('✘ Error de PayPal.'),
     onCancel: () => { const el = document.getElementById('al-checkout'); el.className = 'alert-b a-info show'; el.textContent = 'Pago cancelado.'; }
   }).render('#pp-btn');
 }
 
-async function genLicense(pk, username, email, orderId) {
+async function genLicense(pk, username, email, orderId, discountCode = '') {
   const p = PLANS[pk];
   const days = pk === 'lifetime' ? 36500 : p.days;
   try {
-    const r = await fetch(RENDER_URL + '/api/issue_public', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, days, license_type: p.type, max_devices: p.devs, paypal_order_id: orderId, plan: pk }) });
+    const r = await fetch(RENDER_URL + '/api/issue_public', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, days, license_type: p.type, max_devices: p.devs, paypal_order_id: orderId, plan: pk, discount_code: discountCode }) });
     const data = await r.json();
     if (data.key) {
       document.getElementById('s-form').style.display = 'none';
