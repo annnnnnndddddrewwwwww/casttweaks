@@ -800,7 +800,7 @@ def issue_free():
     username      = (data.get("username")      or "").strip()
     email         = (data.get("email")         or "").strip()
     days          = int(data.get("days", 30))
-    license_type  = (data.get("license_type")  or "Basic").strip()
+    license_type  = (data.get("license_type")  or "Basic").strip().capitalize()
     discount_code = (data.get("discount_code") or "").strip().upper()
 
     if not username:
@@ -908,7 +908,7 @@ def issue_public():
     username      = (data.get("username")        or "").strip()
     email         = (data.get("email")           or "").strip()
     days          = int(data.get("days", 30))
-    license_type  = (data.get("license_type")    or "Basic").strip()
+    license_type  = (data.get("license_type")    or "Basic").strip().capitalize()
     max_devices   = int(data.get("max_devices", 1))
     order_id      = (data.get("paypal_order_id") or "").strip()
     discount_code = (data.get("discount_code")   or "").strip().upper()
