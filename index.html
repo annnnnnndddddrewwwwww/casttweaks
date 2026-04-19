@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CastTweaks® — Optimización Premium para tu PC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Syne:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.paypal.com/sdk/js?client-id=AXvJtNMA62gWMya4WhqXmiTdFXiWXlzdP_Dv0nHIHd8PRd7o6Gnmoz6__vlkb37QbMmdb-mGr5TcI_cz&currency=EUR"></script>
+<style>
+:root {
+  --bg:        #03030a;
+  --bg2:       #06060f;
+  --surface:   #0a0a18;
+  --surface2:  #0e0e20;
+  --surface3:  #12122a;
+  --border:    #1a1a3a;
+  --border2:   #222248;
+  --blue:      #3b6fff;
+  --blue2:     #2952d9;
+  --blue-dim:  rgba(59,111,255,0.12);
+  --blue-glow: rgba(59,111,255,0.4);
+  --cyan:      #00e5c3;
+  --cyan2:     #00b89c;
+  --cyan-dim:  rgba(0,229,195,0.1);
+  --cyan-glow: rgba(0,229,195,0.35);
+  --gold:      #f0c040;
+  --gold-dim:  rgba(240,192,64,0.1);
+  --gold-glow: rgba(240,192,64,0.35);
+  --red:       #ff4466;
+  --white:     #eeeeff;
+  --white2:    #8888aa;
+  --white3:    #44445a;
+  --mono:      'JetBrains Mono', monospace;
+  --display:   'Orbitron', sans-serif;
+  --body:      'Syne', sans-serif;
+  --radius:    14px;
+  --ease:      cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--body);
+  overflow-x: hidden;
+  min-height: 100vh;
+  cursor: none;
+}
+
+/* ── CURSOR ── */
+#cursor {
+  position: fixed; top: 0; left: 0;
+  width: 10px; height: 10px;
+  background: var(--cyan); border-radius: 50%;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+  mix-blend-mode: screen;
+  transition: width .15s, height .15s, background .15s;
+}
+#cursor-ring {
+  position: fixed; top: 0; left: 0;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(0,229,195,0.35); border-radius: 50%;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: width .2s, height .2s, border-color .2s;
+}
+body:has(button:hover) #cursor,
+body:has(a:hover) #cursor { width: 18px; height: 18px; background: var(--blue); }
+body:has(button:hover) #cursor-ring,
+body:has(a:hover) #cursor-ring { width: 54px; height: 54px; border-color: rgba(59,111,255,0.45); }
+
+/* ── CANVAS ── */
+#particles { position: fixed; inset: 0; z-index: 0; opacity: .5; pointer-events: none; }
+
+/* ── NOISE ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: .35;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+#app { position: relative; z-index: 2; }
+
+/* ══════════════════════════════════════ HEADER */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: 68px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 5vw;
+  background: rgba(3,3,10,.8); backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: var(--display); font-size: 15px; font-weight: 900;
+  letter-spacing: 4px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--white);
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+  box-shadow: 0 0 20px var(--blue-glow);
+}
+.logo em { color: var(--cyan); font-style: normal; }
+nav { display: flex; align-items: center; gap: 6px; }
+.nav-link {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--white2); text-decoration: none; padding: 8px 14px; border-radius: 8px;
+  border: 1px solid transparent; transition: all .2s; cursor: none;
+}
+.nav-link:hover { color: var(--white); border-color: var(--border2); background: var(--surface); }
+.nav-cta {
+  background: var(--blue) !important; color: #fff !important;
+  border-color: transparent !important; box-shadow: 0 0 24px var(--blue-glow);
+}
+.nav-cta:hover { background: var(--blue2) !important; box-shadow: 0 0 36px var(--blue-glow) !important; }
+
+/* ══════════════════════════════════════ HERO */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 120px 5vw 80px; position: relative;
+}
+.hero-glow {
+  position: absolute; width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(59,111,255,.1) 0%, transparent 65%);
+  top: 50%; left: 50%; transform: translate(-50%,-60%); pointer-events: none;
+}
+.hero-glow2 {
+  position: absolute; width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(0,229,195,.07) 0%, transparent 60%);
+  bottom: 15%; right: 15%; pointer-events: none;
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border2); background: var(--surface);
+  padding: 6px 18px; border-radius: 100px;
+  font-family: var(--mono); font-size: 10px; color: var(--cyan);
+  letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 36px;
+  animation: fadeUp .8s var(--ease) both;
+}
+.tag-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+.hero-title {
+  font-family: var(--display);
+  font-size: clamp(38px,8vw,90px); font-weight: 900;
+  line-height: .92; letter-spacing: -1px; text-transform: uppercase;
+  margin-bottom: 28px;
+  animation: fadeUp .9s var(--ease) .1s both;
+}
+.hero-title .line1 { display: block; }
+.hero-title .line2 {
+  display: block;
+  background: linear-gradient(90deg, var(--blue), var(--cyan), var(--blue));
+  background-size: 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite, fadeUp .9s var(--ease) .1s both;
+}
+@keyframes shimmer { to { background-position: 200% 0; } }
+
+.hero-desc {
+  font-size: clamp(15px,2vw,18px); color: var(--white2); line-height: 1.75;
+  max-width: 540px; margin: 0 auto 48px;
+  animation: fadeUp 1s var(--ease) .2s both;
+}
+.hero-btns {
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+  animation: fadeUp 1s var(--ease) .3s both;
+}
+.hero-stats {
+  display: flex; gap: 40px; margin-top: 80px; flex-wrap: wrap; justify-content: center;
+  animation: fadeUp 1s var(--ease) .45s both;
+}
+.hstat { text-align: center; }
+.hstat-num { font-family: var(--display); font-size: 28px; font-weight: 900; color: var(--cyan); }
+.hstat-label { font-family: var(--mono); font-size: 10px; color: var(--white3); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+.scroll-hint {
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 9px; color: var(--white3); letter-spacing: 2px; text-transform: uppercase;
+  animation: fadeUp 1s var(--ease) .6s both;
+}
+.scroll-arr {
+  width: 18px; height: 18px;
+  border-right: 1px solid var(--white3); border-bottom: 1px solid var(--white3);
+  transform: rotate(45deg); animation: bounce 1.5s ease-in-out infinite;
+}
+@keyframes bounce { 0%,100%{transform:rotate(45deg) translateY(0)} 50%{transform:rotate(45deg) translateY(5px)} }
+
+/* ══════════════════════════════════════ BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 30px; border-radius: 10px; border: none; cursor: none;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
+  font-weight: 500; transition: all .22s var(--ease);
+  position: relative; overflow: hidden; text-decoration: none;
+}
+.btn::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0); transition: background .15s; }
+.btn:hover::after { background: rgba(255,255,255,.05); }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--blue); color: #fff; box-shadow: 0 8px 30px var(--blue-glow); }
+.btn-primary:hover { background: var(--blue2); box-shadow: 0 12px 48px var(--blue-glow); transform: translateY(-2px); }
+.btn-outline { background: transparent; color: var(--white); border: 1px solid var(--border2); }
+.btn-outline:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 20px var(--cyan-dim); transform: translateY(-2px); }
+.btn-cyan { background: var(--cyan); color: #000; font-weight: 700; box-shadow: 0 8px 28px var(--cyan-glow); }
+.btn-cyan:hover { background: var(--cyan2); box-shadow: 0 12px 40px var(--cyan-glow); transform: translateY(-2px); }
+.btn-gold { background: linear-gradient(135deg, var(--gold), #d4a010); color: #000; font-weight: 700; box-shadow: 0 8px 28px var(--gold-glow); }
+.btn-gold:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.btn-lg { padding: 17px 38px; font-size: 13px; }
+.btn-full { width: 100%; }
+.btn:disabled { opacity: .4; cursor: not-allowed !important; transform: none !important; }
+
+/* ══════════════════════════════════════ SECTIONS */
+section { padding: 100px 5vw; }
+.section-tag {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-tag::before { content: ''; width: 28px; height: 1px; background: var(--cyan); }
+.section-title {
+  font-family: var(--display); font-size: clamp(26px,4vw,46px);
+  font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  line-height: 1.1; margin-bottom: 14px;
+}
+.section-desc { color: var(--white2); font-size: 15px; line-height: 1.75; max-width: 480px; }
+
+/* ══════════════════════════════════════ FEATURES */
+.features-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-top: 60px;
+}
+@media(max-width:768px){ .features-grid { grid-template-columns:1fr; } }
+.feat-item {
+  background: var(--surface); padding: 34px 28px;
+  position: relative; overflow: hidden; transition: background .25s;
+}
+.feat-item::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--blue-dim), transparent);
+  opacity: 0; transition: opacity .25s;
+}
+.feat-item:hover { background: var(--surface2); }
+.feat-item:hover::after { opacity: 1; }
+.feat-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  background: var(--blue-dim); border: 1px solid rgba(59,111,255,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; margin-bottom: 18px; transition: box-shadow .25s;
+}
+.feat-item:hover .feat-icon { box-shadow: 0 0 24px var(--blue-glow); }
+.feat-title { font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+.feat-desc { font-size: 13px; color: var(--white2); line-height: 1.7; }
+
+/* ══════════════════════════════════════ PRICING */
+#pricing { background: radial-gradient(ellipse at 50% 0, rgba(59,111,255,.06) 0%, transparent 55%); }
+.pricing-hdr { text-align: center; margin-bottom: 72px; }
+.pricing-hdr .section-tag { justify-content: center; }
+.pricing-hdr .section-tag::before { display: none; }
+
+.plans-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 22px; max-width: 1080px; margin: 0 auto;
+}
+@media(max-width:900px){ .plans-grid { grid-template-columns: 1fr; max-width: 420px; } }
+
+.plan-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 38px 30px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  transition: transform .3s var(--ease), box-shadow .3s;
+}
+.plan-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  transition: opacity .3s;
+}
+.pc-basic::before { background: linear-gradient(90deg,transparent,var(--blue),transparent); }
+.pc-pro   { border-color: rgba(0,229,195,.3); box-shadow: 0 0 50px rgba(0,229,195,.06); }
+.pc-pro::before { background: linear-gradient(90deg,transparent,var(--cyan),transparent); }
+.pc-life::before { background: linear-gradient(90deg,transparent,var(--gold),transparent); }
+.pc-basic:hover { transform: translateY(-8px); box-shadow: 0 24px 60px rgba(59,111,255,.18); }
+.pc-pro:hover   { transform: translateY(-8px); box-shadow: 0 24px 60px rgba(0,229,195,.18); }
+.pc-life:hover  { transform: translateY(-8px); box-shadow: 0 24px 60px rgba(240,192,64,.18); }
+
+.plan-badge-wrap { position: absolute; top: 18px; right: 18px; }
+.plan-hot {
+  background: var(--cyan); color: #000;
+  font-family: var(--mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 100px;
+}
+
+.plan-name-row { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+.plan-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pc-basic .plan-dot { background: var(--blue); box-shadow: 0 0 12px var(--blue-glow); }
+.pc-pro   .plan-dot { background: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+.pc-life  .plan-dot { background: var(--gold); box-shadow: 0 0 12px var(--gold-glow); }
+.plan-name {
+  font-family: var(--display); font-size: 13px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+}
+.pc-basic .plan-name { color: var(--blue); }
+.pc-pro   .plan-name { color: var(--cyan); }
+.pc-life  .plan-name { color: var(--gold); }
+
+/* Price display */
+.plan-price-area { margin-bottom: 4px; }
+.plan-price {
+  font-family: var(--display); font-size: 54px; font-weight: 900; line-height: 1;
+  display: flex; align-items: flex-start; gap: 2px;
+}
+.price-eur { font-size: 22px; margin-top: 8px; }
+.price-dec { font-size: 20px; align-self: flex-end; margin-bottom: 4px; }
+.pc-basic .plan-price { color: var(--white); }
+.pc-pro   .plan-price { color: var(--cyan); }
+.pc-life  .plan-price { color: var(--gold); }
+.plan-price-note { font-family: var(--mono); font-size: 10px; color: var(--white3); margin-bottom: 6px; }
+
+/* Configurator */
+.day-config {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 16px 18px; margin: 18px 0;
+}
+.day-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.day-lbl { font-family: var(--mono); font-size: 10px; color: var(--white2); letter-spacing: 1px; text-transform: uppercase; }
+.day-val { font-family: var(--display); font-size: 15px; font-weight: 700; }
+.pc-basic .day-val { color: var(--blue); }
+.pc-pro   .day-val { color: var(--cyan); }
+.pc-life  .day-val { color: var(--gold); }
+
+input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--border2); border-radius: 2px; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--bg); cursor: none; transition: transform .15s; }
+.pc-basic input[type=range]::-webkit-slider-thumb { background: var(--blue); box-shadow: 0 0 10px var(--blue-glow); }
+.pc-pro   input[type=range]::-webkit-slider-thumb { background: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
+.pc-life  input[type=range]::-webkit-slider-thumb { background: var(--gold); }
+input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.25); }
+
+.day-presets { display: flex; gap: 5px; margin-top: 10px; }
+.dpr {
+  flex: 1; background: var(--surface3); border: 1px solid var(--border2);
+  color: var(--white3); font-family: var(--mono); font-size: 10px;
+  padding: 5px 4px; border-radius: 6px; cursor: none; transition: all .15s; text-align: center;
+}
+.pc-basic .dpr.on { background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
+.pc-pro   .dpr.on { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+.pc-life  .dpr.on { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+.day-total {
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px;
+  font-family: var(--mono); font-size: 11px; color: var(--white2);
+}
+.day-total-num { font-family: var(--display); font-size: 20px; font-weight: 700; }
+.pc-basic .day-total-num { color: var(--blue); }
+.pc-pro   .day-total-num { color: var(--cyan); }
+.pc-life  .day-total-num { color: var(--gold); }
+
+.plan-feats { list-style: none; margin: 20px 0; flex: 1; }
+.plan-feats li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--white2); line-height: 1.5;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.plan-feats li:last-child { border: none; }
+.fcheck {
+  width: 17px; height: 17px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; flex-shrink: 0; margin-top: 1px;
+}
+.pc-basic .fcheck { background: var(--blue-dim); color: var(--blue); }
+.pc-pro   .fcheck { background: var(--cyan-dim); color: var(--cyan); }
+.pc-life  .fcheck { background: var(--gold-dim); color: var(--gold); }
+
+/* ══════════════════════════════════════ TESTIMONIALS */
+#testimonials { background: linear-gradient(180deg, transparent, rgba(0,229,195,.025), transparent); }
+.testi-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(270px,1fr)); gap: 18px; margin-top: 56px; }
+.testi {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 26px;
+  transition: transform .3s var(--ease);
+}
+.testi:hover { transform: translateY(-4px); }
+.testi-stars { color: var(--gold); letter-spacing: 2px; font-size: 12px; margin-bottom: 12px; }
+.testi-txt { font-size: 13px; color: var(--white2); line-height: 1.75; font-style: italic; margin-bottom: 18px; }
+.testi-auth { display: flex; align-items: center; gap: 10px; }
+.testi-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  font-family: var(--display); font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.testi-nm { font-family: var(--mono); font-size: 12px; color: var(--white); letter-spacing: .5px; }
+.testi-rl { font-size: 11px; color: var(--white3); }
+
+/* ══════════════════════════════════════ FAQ */
+#faq { background: radial-gradient(ellipse at 50% 100%, rgba(59,111,255,.05) 0%, transparent 55%); }
+.faq-center { text-align: center; margin-bottom: 60px; }
+.faq-center .section-tag { justify-content: center; }
+.faq-center .section-tag::before { display: none; }
+.faq-list { max-width: 700px; margin: 0 auto; }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-q {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 0; cursor: none; font-size: 15px; font-weight: 500; transition: color .2s;
+}
+.faq-q:hover { color: var(--cyan); }
+.faq-ico { font-size: 20px; color: var(--white3); transition: transform .3s var(--ease), color .2s; }
+.faq-item.open .faq-ico { transform: rotate(45deg); color: var(--cyan); }
+.faq-ans { max-height: 0; overflow: hidden; transition: max-height .4s var(--ease); }
+.faq-ans p { padding-bottom: 20px; font-size: 14px; color: var(--white2); line-height: 1.8; }
+.faq-item.open .faq-ans { max-height: 200px; }
+
+/* ══════════════════════════════════════ FOOTER */
+footer {
+  border-top: 1px solid var(--border); padding: 44px 5vw;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+}
+.foot-logo { font-family: var(--display); font-size: 13px; font-weight: 900; letter-spacing: 3px; }
+.foot-logo em { color: var(--cyan); font-style: normal; }
+.foot-links { display: flex; gap: 22px; }
+.foot-lnk { font-family: var(--mono); font-size: 11px; color: var(--white3); text-decoration: none; letter-spacing: 1px; transition: color .2s; cursor: none; }
+.foot-lnk:hover { color: var(--cyan); }
+.foot-copy { font-family: var(--mono); font-size: 11px; color: var(--white3); letter-spacing: .5px; }
+
+/* ══════════════════════════════════════ MODAL */
+.overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.88); backdrop-filter: blur(20px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.overlay.open { display: flex; animation: fadeIn .2s; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 20px; width: 100%; max-width: 500px;
+  max-height: 92vh; overflow-y: auto; padding: 40px;
+  position: relative; animation: scaleIn .25s var(--ease);
+}
+.modal-x {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: 8px;
+  color: var(--white2); font-size: 16px;
+  display: flex; align-items: center; justify-content: center; cursor: none; transition: all .15s;
+}
+.modal-x:hover { color: var(--white); }
+
+.m-plan-row { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
+.m-plan-dot { width: 10px; height: 10px; border-radius: 50%; }
+.m-plan-nm { font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+.m-title { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.m-sub { font-size: 14px; color: var(--white2); line-height: 1.65; margin-bottom: 28px; }
+
+.order-box {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 18px; margin-bottom: 22px;
+}
+.o-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--white2); padding: 7px 0; }
+.o-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+.o-total { padding-top: 14px; margin-top: 2px; }
+.o-total-lbl { font-family: var(--display); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.o-total-num { font-family: var(--display); font-size: 24px; font-weight: 900; }
+
+.f-group { margin-bottom: 16px; }
+.f-lbl { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--white2); margin-bottom: 8px; }
+.f-inp {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; color: var(--white); font-family: var(--mono); font-size: 13px;
+  padding: 13px 16px; outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.f-inp:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,111,255,.15); }
+.f-inp::placeholder { color: var(--white3); }
+
+.pp-sep { display: flex; align-items: center; gap: 12px; margin: 22px 0 18px; }
+.pp-line { flex: 1; height: 1px; background: var(--border2); }
+.pp-txt { font-family: var(--mono); font-size: 9px; color: var(--white3); letter-spacing: 2px; text-transform: uppercase; }
+
+.alert-b {
+  border-radius: 10px; padding: 12px 16px;
+  font-family: var(--mono); font-size: 11px; line-height: 1.6;
+  border: 1px solid; display: none; margin-top: 14px;
+}
+.alert-b.show { display: block; animation: fadeUp .2s; }
+.a-err  { background: rgba(255,68,102,.1); border-color: rgba(255,68,102,.4); color: #ff8fa3; }
+.a-ok   { background: var(--cyan-dim); border-color: rgba(0,229,195,.35); color: var(--cyan); }
+.a-info { background: var(--blue-dim); border-color: rgba(59,111,255,.3); color: #93bbff; }
+
+/* SUCCESS */
+.suc-screen { text-align: center; padding: 10px 0; }
+.suc-icon {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: var(--cyan-dim); border: 2px solid var(--cyan);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; margin: 0 auto 24px;
+  box-shadow: 0 0 40px var(--cyan-glow);
+  animation: scaleIn .4s var(--ease);
+}
+.suc-title { font-family: var(--display); font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; color: var(--cyan); }
+.suc-sub { font-size: 14px; color: var(--white2); line-height: 1.7; margin-bottom: 28px; }
+.key-box {
+  background: var(--surface3); border: 1px solid var(--cyan2);
+  border-radius: 12px; padding: 18px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  box-shadow: 0 0 28px rgba(0,229,195,.08); margin-bottom: 20px;
+}
+.key-txt { font-family: var(--mono); font-size: 11px; color: var(--cyan); word-break: break-all; letter-spacing: 1px; text-align: left; }
+.copy-b {
+  background: rgba(0,229,195,.12); border: 1px solid rgba(0,229,195,.3);
+  color: var(--cyan); border-radius: 8px; padding: 8px 14px;
+  font-family: var(--mono); font-size: 11px; cursor: none; transition: all .15s; white-space: nowrap;
+}
+.copy-b:hover { background: rgba(0,229,195,.22); }
+.suc-meta { font-family: var(--mono); font-size: 11px; color: var(--white3); line-height: 1.9; margin-bottom: 24px; }
+
+/* SPINNER */
+.sp { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.12); border-top-color: var(--cyan); border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ANIMATIONS */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+.reveal.on { opacity: 1; transform: none; }
+.d1 { transition-delay: .1s; }
+.d2 { transition-delay: .2s; }
+.d3 { transition-delay: .3s; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes scaleIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+@media(max-width:768px){
+  body { cursor: auto; }
+  #cursor, #cursor-ring { display: none; }
+  header { padding: 0 20px; }
+  .nav-link:not(.nav-cta) { display: none; }
+  section { padding: 70px 20px; }
+  footer { flex-direction: column; text-align: center; }
+  .foot-links { justify-content: center; }
+  .features-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="particles"></canvas>
+
+<div id="app">
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">⚡</div>
+    CAST<em>TWEAKS</em>®
+  </a>
+  <nav>
+    <a class="nav-link" href="#features">Funciones</a>
+    <a class="nav-link" href="#pricing">Precios</a>
+    <a class="nav-link" href="#faq">FAQ</a>
+    <a class="nav-link nav-cta" href="#pricing">Obtener licencia</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+
+  <div class="hero-tag">
+    <div class="tag-dot"></div>
+    Optimización avanzada para Windows
+  </div>
+
+  <h1 class="hero-title">
+    <span class="line1">Eleva tu PC</span>
+    <span class="line2">al siguiente nivel</span>
+  </h1>
+
+  <p class="hero-desc">
+    CTadvanced optimiza cada milisegundo de tu sistema. Más FPS, menos latencia, máximo rendimiento. Licencia activada en segundos tras el pago.
+  </p>
+
+  <div class="hero-btns">
+    <a class="btn btn-primary btn-lg" href="#pricing">Comprar ahora</a>
+    <a class="btn btn-outline btn-lg" href="#features">Ver funciones</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hstat">
+      <div class="hstat-num">+180%</div>
+      <div class="hstat-label">FPS de media</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-num">-60%</div>
+      <div class="hstat-label">Latencia</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-num">50+</div>
+      <div class="hstat-label">Tweaks del sistema</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-num">2 min</div>
+      <div class="hstat-label">Activación</div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-arr"></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-tag reveal">Características</div>
+  <h2 class="section-title reveal d1">Todo lo que necesitas<br><span style="color:var(--cyan)">en una sola app</span></h2>
+  <p class="section-desc reveal d2">Optimizaciones probadas. Sin bloatware. Sin sorpresas. Solo rendimiento puro.</p>
+
+  <div class="features-grid">
+    <div class="feat-item reveal">
+      <div class="feat-icon">🚀</div>
+      <div class="feat-title">Boost de FPS</div>
+      <p class="feat-desc">Tweaks avanzados del sistema para maximizar frames en cualquier juego sin sacrificar estabilidad.</p>
+    </div>
+    <div class="feat-item reveal d1">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Latencia cero</div>
+      <p class="feat-desc">Ajustes de red y kernel que reducen el ping y eliminan el stuttering completamente.</p>
+    </div>
+    <div class="feat-item reveal d2">
+      <div class="feat-icon">🔧</div>
+      <div class="feat-title">50+ Tweaks</div>
+      <p class="feat-desc">Windows, GPU, CPU y RAM optimizados con un solo clic. Configuración automática para tu hardware.</p>
+    </div>
+    <div class="feat-item reveal">
+      <div class="feat-icon">🛡️</div>
+      <div class="feat-title">Anti-cheat safe</div>
+      <p class="feat-desc">100% seguro con EAC, BattleEye y Vanguard. No modifica archivos de juego bajo ningún concepto.</p>
+    </div>
+    <div class="feat-item reveal d1">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Monitor en vivo</div>
+      <p class="feat-desc">Dashboard con métricas de CPU, GPU, RAM y temperatura actualizadas en tiempo real.</p>
+    </div>
+    <div class="feat-item reveal d2">
+      <div class="feat-icon">🔄</div>
+      <div class="feat-title">Auto-updates</div>
+      <p class="feat-desc">Siempre la última versión con los tweaks más recientes. Cero intervención manual.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="pricing-hdr">
+    <div class="section-tag reveal">Planes y precios</div>
+    <h2 class="section-title reveal d1">Elige tu plan</h2>
+    <p class="section-desc reveal d2" style="margin:0 auto;">Pago único con PayPal. Elige los días que quieras. Sin suscripciones ni cargos ocultos.</p>
+  </div>
+
+  <div class="plans-grid">
+
+    <!-- BASIC -->
+    <div class="plan-card pc-basic reveal">
+      <div class="plan-name-row">
+        <div class="plan-dot"></div>
+        <div class="plan-name">Basic</div>
+      </div>
+      <div class="plan-price-area">
+        <div class="plan-price">
+          <span class="price-eur">€</span>
+          <span id="pn-basic">5</span>
+          <span class="price-dec">.<span id="pd-basic">00</span></span>
+        </div>
+        <div class="plan-price-note">pago único · <span id="px-basic">30 días incluidos</span></div>
+      </div>
+
+      <div class="day-config">
+        <div class="day-row">
+          <span class="day-lbl">Duración</span>
+          <span class="day-val" id="dv-basic">30 días</span>
+        </div>
+        <input type="range" id="sl-basic" min="30" max="365" step="30" value="30" oninput="upd('basic',this.value)">
+        <div class="day-presets">
+          <button class="dpr on" onclick="sd('basic',30)">30d</button>
+          <button class="dpr"    onclick="sd('basic',90)">90d</button>
+          <button class="dpr"    onclick="sd('basic',180)">6m</button>
+          <button class="dpr"    onclick="sd('basic',365)">1 año</button>
+        </div>
+        <div class="day-total">
+          <span>Total</span>
+          <span class="day-total-num" id="tot-basic">€5.00</span>
+        </div>
+      </div>
+
+      <ul class="plan-feats">
+        <li><span class="fcheck">✓</span>Optimizaciones esenciales</li>
+        <li><span class="fcheck">✓</span>Boost de FPS básico</li>
+        <li><span class="fcheck">✓</span>Tweaks de red</li>
+        <li><span class="fcheck">✓</span>1 dispositivo</li>
+        <li><span class="fcheck">✓</span>Actualizaciones incluidas</li>
+      </ul>
+
+      <button class="btn btn-primary btn-full" onclick="openBuy('basic')">
+        Comprar Basic →
+      </button>
+    </div>
+
+    <!-- PRO -->
+    <div class="plan-card pc-pro reveal d1">
+      <div class="plan-badge-wrap"><span class="plan-hot">⭐ Popular</span></div>
+      <div class="plan-name-row">
+        <div class="plan-dot"></div>
+        <div class="plan-name">Pro</div>
+      </div>
+      <div class="plan-price-area">
+        <div class="plan-price">
+          <span class="price-eur">€</span>
+          <span id="pn-pro">10</span>
+          <span class="price-dec">.<span id="pd-pro">00</span></span>
+        </div>
+        <div class="plan-price-note">pago único · <span id="px-pro">30 días incluidos</span></div>
+      </div>
+
+      <div class="day-config">
+        <div class="day-row">
+          <span class="day-lbl">Duración</span>
+          <span class="day-val" id="dv-pro">30 días</span>
+        </div>
+        <input type="range" id="sl-pro" min="30" max="365" step="30" value="30" oninput="upd('pro',this.value)">
+        <div class="day-presets">
+          <button class="dpr on" onclick="sd('pro',30)">30d</button>
+          <button class="dpr"    onclick="sd('pro',90)">90d</button>
+          <button class="dpr"    onclick="sd('pro',180)">6m</button>
+          <button class="dpr"    onclick="sd('pro',365)">1 año</button>
+        </div>
+        <div class="day-total">
+          <span>Total</span>
+          <span class="day-total-num" id="tot-pro">€10.00</span>
+        </div>
+      </div>
+
+      <ul class="plan-feats">
+        <li><span class="fcheck">✓</span>Todo de Basic</li>
+        <li><span class="fcheck">✓</span>Tweaks avanzados GPU/CPU/RAM</li>
+        <li><span class="fcheck">✓</span>Monitor en tiempo real</li>
+        <li><span class="fcheck">✓</span>Perfil de optimización por juego</li>
+        <li><span class="fcheck">✓</span>Hasta 2 dispositivos</li>
+        <li><span class="fcheck">✓</span>Soporte prioritario</li>
+      </ul>
+
+      <button class="btn btn-cyan btn-full" onclick="openBuy('pro')">
+        Comprar Pro →
+      </button>
+    </div>
+
+    <!-- LIFETIME -->
+    <div class="plan-card pc-life reveal d2">
+      <div class="plan-name-row">
+        <div class="plan-dot"></div>
+        <div class="plan-name">Lifetime</div>
+      </div>
+      <div class="plan-price-area">
+        <div class="plan-price">
+          <span class="price-eur" style="color:var(--gold)">€</span>
+          <span id="pn-life" style="color:var(--gold)">15</span>
+          <span class="price-dec" style="color:var(--gold)">.<span>00</span></span>
+        </div>
+        <div class="plan-price-note">pago único · acceso de por vida</div>
+      </div>
+
+      <div class="day-config" style="border-color:rgba(240,192,64,.2);">
+        <div class="day-row">
+          <span class="day-lbl">Duración</span>
+          <span class="day-val" style="color:var(--gold)">∞ Para siempre</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--white3);text-align:center;padding:10px 0;letter-spacing:.5px;">
+          Sin renovaciones · 36 500 días · Para siempre
+        </div>
+        <div class="day-total" style="border-color:rgba(240,192,64,.2);">
+          <span>Total</span>
+          <span class="day-total-num" style="color:var(--gold)">€15.00</span>
+        </div>
+      </div>
+
+      <ul class="plan-feats">
+        <li><span class="fcheck">✓</span>Todo de Pro</li>
+        <li><span class="fcheck">✓</span>Acceso de por vida garantizado</li>
+        <li><span class="fcheck">✓</span>Todas las actualizaciones futuras</li>
+        <li><span class="fcheck">✓</span>Hasta 3 dispositivos</li>
+        <li><span class="fcheck">✓</span>Soporte VIP</li>
+        <li><span class="fcheck">✓</span>Funciones beta exclusivas</li>
+      </ul>
+
+      <button class="btn btn-gold btn-full" onclick="openBuy('lifetime')">
+        Comprar Lifetime →
+      </button>
+    </div>
+
+  </div><!-- /plans-grid -->
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="section-tag reveal">Usuarios reales</div>
+  <h2 class="section-title reveal d1">Lo que dicen<br><span style="color:var(--cyan)">nuestros usuarios</span></h2>
+
+  <div class="testi-grid">
+    <div class="testi reveal">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-txt">"Pasé de 140 a 220 FPS estables en Warzone. CTadvanced es lo mejor que he instalado en mi PC en años. La diferencia es brutal."</p>
+      <div class="testi-auth">
+        <div class="testi-av" style="background:var(--blue-dim);color:var(--blue);">XR</div>
+        <div>
+          <div class="testi-nm">xRaider_07</div>
+          <div class="testi-rl">Plan Pro · Warzone</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi reveal d1">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-txt">"El ping bajó de 45ms a 18ms de media. En competitivo eso es la diferencia entre ganar y perder. Brutal el cambio."</p>
+      <div class="testi-auth">
+        <div class="testi-av" style="background:var(--cyan-dim);color:var(--cyan);">NK</div>
+        <div>
+          <div class="testi-nm">N0_Kill</div>
+          <div class="testi-rl">Plan Lifetime · CS2</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi reveal d2">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-txt">"Instalación en 2 minutos, clave al instante. Mi PC va como nuevo. El Lifetime merece cada euro sin dudarlo."</p>
+      <div class="testi-auth">
+        <div class="testi-av" style="background:var(--gold-dim);color:var(--gold);">MV</div>
+        <div>
+          <div class="testi-nm">MiniViper</div>
+          <div class="testi-rl">Plan Lifetime · Fortnite</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="faq-center">
+    <div class="section-tag reveal">Preguntas frecuentes</div>
+    <h2 class="section-title reveal d1">FAQ</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item reveal" onclick="this.classList.toggle('open')">
+      <div class="faq-q">¿Cómo recibo mi clave tras el pago? <span class="faq-ico">+</span></div>
+      <div class="faq-ans"><p>Inmediatamente después de confirmar el pago con PayPal, la clave aparece en pantalla. Solo tienes que copiarla e introducirla en CTadvanced para activarla.</p></div>
+    </div>
+    <div class="faq-item reveal d1" onclick="this.classList.toggle('open')">
+      <div class="faq-q">¿Puedo cambiar de plan después? <span class="faq-ico">+</span></div>
+      <div class="faq-ans"><p>Sí. Puedes adquirir un plan superior en cualquier momento. Contacta con soporte y gestionamos el upgrade teniendo en cuenta los días que te queden.</p></div>
+    </div>
+    <div class="faq-item reveal d2" onclick="this.classList.toggle('open')">
+      <div class="faq-q">¿La licencia se vincula a mi PC? <span class="faq-ico">+</span></div>
+      <div class="faq-ans"><p>Sí. Al activar la clave por primera vez queda vinculada al hardware de tu equipo. Si necesitas cambiarla de PC, contacta con soporte para un reset de HWID.</p></div>
+    </div>
+    <div class="faq-item reveal" onclick="this.classList.toggle('open')">
+      <div class="faq-q">¿Es seguro para sistemas anti-cheat? <span class="faq-ico">+</span></div>
+      <div class="faq-ans"><p>100%. CTadvanced solo aplica tweaks del sistema operativo. No modifica archivos de juego ni interfiere con EAC, BattleEye o Vanguard.</p></div>
+    </div>
+    <div class="faq-item reveal d1" onclick="this.classList.toggle('open')">
+      <div class="faq-q">¿Por qué el precio sube con más días? <span class="faq-ico">+</span></div>
+      <div class="faq-ans"><p>El precio base incluye 30 días. Por cada mes adicional se suma ~€1 (Basic) o ~€1.50 (Pro). El plan Lifetime no tiene coste adicional: cubre para siempre.</p></div>
+    </div>
+    <div class="faq-item reveal d2" onclick="this.classList.toggle('open')">
+      <div class="faq-q">¿Qué pasa cuando expira mi licencia? <span class="faq-ico">+</span></div>
+      <div class="faq-ans"><p>CTadvanced deja de funcionar hasta que renueves. Tu PC no sufre ningún cambio: las optimizaciones se mantienen hasta que las reviertas manualmente.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-logo">CAST<em>TWEAKS</em>®</div>
+  <div class="foot-links">
+    <a class="foot-lnk" href="#">Términos</a>
+    <a class="foot-lnk" href="#">Privacidad</a>
+    <a class="foot-lnk" href="#">Soporte</a>
+    <a class="foot-lnk" href="#faq">FAQ</a>
+  </div>
+  <div class="foot-copy">© <span id="yr"></span> CastTweaks® — Todos los derechos reservados</div>
+</footer>
+
+</div><!-- /app -->
+
+<!-- ══════════════ CHECKOUT MODAL ══════════════ -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <button class="modal-x" onclick="closeBuy()">✕</button>
+
+    <!-- STEP 1: form + paypal -->
+    <div id="s-form">
+      <div class="m-plan-row">
+        <div class="m-plan-dot" id="m-dot"></div>
+        <div class="m-plan-nm" id="m-name"></div>
+      </div>
+      <div class="m-title">Finalizar compra</div>
+      <div class="m-sub">Introduce tus datos y paga con PayPal. Tu clave aparecerá aquí al instante.</div>
+
+      <div class="order-box">
+        <div class="o-row"><span>Plan</span><span id="o-plan">—</span></div>
+        <div class="o-row"><span>Duración</span><span id="o-days">—</span></div>
+        <div class="o-row"><span>Precio base</span><span id="o-base">—</span></div>
+        <div class="o-row"><span>Días extra</span><span id="o-extra">€0.00</span></div>
+        <div class="o-row o-total">
+          <span class="o-total-lbl">Total</span>
+          <span class="o-total-num" id="o-total">—</span>
+        </div>
+      </div>
+
+      <div class="f-group">
+        <label class="f-lbl">Tu email</label>
+        <input class="f-inp" type="email" id="f-email" placeholder="tu@email.com">
+      </div>
+      <div class="f-group">
+        <label class="f-lbl">Nombre / usuario en CTadvanced</label>
+        <input class="f-inp" type="text" id="f-user" placeholder="Ej: JuanGamer99">
+      </div>
+
+      <div id="al-checkout" class="alert-b a-err"></div>
+
+      <div class="pp-sep">
+        <div class="pp-line"></div>
+        <div class="pp-txt">Pagar con PayPal</div>
+        <div class="pp-line"></div>
+      </div>
+      <div id="pp-btn"></div>
+    </div>
+
+    <!-- STEP 2: success -->
+    <div id="s-success" style="display:none">
+      <div class="suc-screen">
+        <div class="suc-icon">✓</div>
+        <div class="suc-title">¡Pago confirmado!</div>
+        <p class="suc-sub">Tu licencia está lista. Cópiala e introdúcela en CTadvanced para activarla en tu PC.</p>
+        <div class="key-box">
+          <div class="key-txt" id="suc-key">—</div>
+          <button class="copy-b" id="copy-btn" onclick="copyKey()">Copiar</button>
+        </div>
+        <div class="suc-meta" id="suc-meta"></div>
+        <button class="btn btn-outline btn-full" onclick="closeBuy()">Cerrar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  ⚙ CONFIGURACIÓN — edita RENDER_URL
+// ══════════════════════════════════════════════════
+const RENDER_URL = 'https://casttweaks.onrender.com'; // ← tu URL
+
+const PLANS = {
+  basic:    { name:'Basic',    base:5,  xpm:1.0,  days:30, devs:1, col:'#3b6fff', type:'Basic'    },
+  pro:      { name:'Pro',      base:10, xpm:1.5,  days:30, devs:2, col:'#00e5c3', type:'Pro'      },
+  lifetime: { name:'Lifetime', base:15, xpm:0,    days:36500, devs:3, col:'#f0c040', type:'Lifetime' },
+};
+
+let activePlan = null;
+
+// ══════════════════════════════════════════════════
+//  CURSOR
+// ══════════════════════════════════════════════════
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e=>{
+  mx=e.clientX; my=e.clientY;
+  cur.style.left=mx+'px'; cur.style.top=my+'px';
+});
+(function animR(){ rx+=(mx-rx)*.1; ry+=(my-ry)*.1; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(animR); })();
+
+// ══════════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════════
+(function(){
+  const c=document.getElementById('particles'), ctx=c.getContext('2d');
+  let W,H,pts=[];
+  const resize=()=>{ W=c.width=window.innerWidth; H=c.height=window.innerHeight; };
+  resize(); window.addEventListener('resize',resize);
+  for(let i=0;i<80;i++) pts.push({
+    x:Math.random()*1920, y:Math.random()*1080,
+    vx:(Math.random()-.5)*.28, vy:(Math.random()-.5)*.28,
+    r:Math.random()*1.4+.4, a:Math.random()*.7+.2,
+    col:Math.random()>.55?'59,111,255':'0,229,195'
+  });
+  (function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.col},${p.a})`; ctx.fill();
+    });
+    for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<130){ ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y);
+        ctx.strokeStyle=`rgba(59,111,255,${(1-d/130)*.14})`; ctx.lineWidth=.5; ctx.stroke(); }
+    }
+    requestAnimationFrame(draw);
+  })();
+})();
+
+// ══════════════════════════════════════════════════
+//  SCROLL REVEAL
+// ══════════════════════════════════════════════════
+new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('on'); });
+},{threshold:.1}).observe && document.querySelectorAll('.reveal').forEach(el=>{
+  new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('on'); });
+  },{threshold:.1}).observe(el);
+});
+
+// ══════════════════════════════════════════════════
+//  PRICING LOGIC
+// ══════════════════════════════════════════════════
+function price(pk, days){
+  const p=PLANS[pk];
+  if(pk==='lifetime') return p.base;
+  return p.base + Math.max(0,Math.floor((days-30)/30)) * p.xpm;
+}
+
+function upd(pk, days){
+  days=parseInt(days);
+  PLANS[pk].days=days;
+  const tot=price(pk,days);
+  const extra=Math.max(0,Math.floor((days-30)/30));
+  if(pk!=='lifetime'){
+    document.getElementById('dv-'+pk).textContent = days>=365?'1 año (365d)':days+' días';
+    document.getElementById('pn-'+pk).textContent = Math.floor(tot);
+    document.getElementById('pd-'+pk).textContent = ((tot%1)*100).toFixed(0).padStart(2,'0');
+    document.getElementById('px-'+pk).textContent = extra>0?`+${extra} mes${extra>1?'es':''} extra`:'30 días incluidos';
+  }
+  document.getElementById('tot-'+pk).textContent = '€'+tot.toFixed(2);
+  document.getElementById('sl-'+pk).value = days;
+  document.querySelectorAll(`.pc-${pk} .dpr`).forEach(b=>{
+    const map={'30d':30,'90d':90,'6m':180,'1 año':365};
+    b.classList.toggle('on', map[b.textContent.trim()]===days);
+  });
+}
+function sd(pk,d){ upd(pk,d); }
+
+// ══════════════════════════════════════════════════
+//  CHECKOUT
+// ══════════════════════════════════════════════════
+function openBuy(pk){
+  activePlan=pk;
+  const p=PLANS[pk], tot=price(pk,p.days);
+  const extra=pk==='lifetime'?0:Math.max(0,Math.floor((p.days-30)/30));
+  const xCost=(tot-p.base).toFixed(2);
+
+  document.getElementById('m-dot').style.cssText=`background:${p.col};box-shadow:0 0 12px ${p.col};`;
+  document.getElementById('m-name').style.color=p.col;
+  document.getElementById('m-name').textContent=p.name;
+  document.getElementById('o-plan').textContent=p.name;
+  document.getElementById('o-days').textContent=pk==='lifetime'?'∞ Lifetime':p.days+' días';
+  document.getElementById('o-base').textContent='€'+p.base.toFixed(2);
+  document.getElementById('o-extra').textContent=extra>0?`€${xCost} (+${extra}m)`:'€0.00';
+  document.getElementById('o-total').textContent='€'+tot.toFixed(2);
+  document.getElementById('o-total').style.color=p.col;
+
+  document.getElementById('s-form').style.display='block';
+  document.getElementById('s-success').style.display='none';
+  document.getElementById('al-checkout').classList.remove('show');
+  document.getElementById('overlay').classList.add('open');
+
+  buildPayPal(tot, pk);
+}
+
+function closeBuy(){
+  document.getElementById('overlay').classList.remove('open');
+  activePlan=null;
+}
+
+function showErr(msg){
+  const el=document.getElementById('al-checkout');
+  el.className='alert-b a-err show'; el.textContent=msg;
+}
+function hideErr(){ document.getElementById('al-checkout').classList.remove('show'); }
+
+function buildPayPal(amount, pk){
+  const wrap=document.getElementById('pp-btn');
+  wrap.innerHTML='';
+
+  if(typeof paypal==='undefined'){
+    wrap.innerHTML='<div style="font-family:var(--mono);font-size:12px;color:#ff8fa3;padding:18px;text-align:center;border:1px solid rgba(255,68,102,.3);border-radius:10px;">⚠ Configura tu PayPal Client ID en el &lt;script&gt; src de la cabecera.</div>';
+    return;
+  }
+
+  paypal.Buttons({
+    style:{ layout:'vertical', color:'blue', shape:'rect', label:'pay', height:46 },
+
+    createOrder:(data,actions)=>{
+      const email=document.getElementById('f-email').value.trim();
+      const user=document.getElementById('f-user').value.trim();
+      if(!email||!/\S+@\S+\.\S+/.test(email)){ showErr('✘ Introduce un email válido.'); return Promise.reject(); }
+      if(!user){ showErr('✘ Introduce tu nombre de usuario.'); return Promise.reject(); }
+      hideErr();
+      return actions.order.create({
+        purchase_units:[{
+          description:`CastTweaks® ${PLANS[pk].name} — ${pk==='lifetime'?'Lifetime':PLANS[pk].days+'d'}`,
+          amount:{ value:amount.toFixed(2), currency_code:'EUR' }
+        }]
+      });
+    },
+
+    onApprove: async(data,actions)=>{
+      try{
+        const d=await actions.order.capture();
+        await genLicense(pk, document.getElementById('f-user').value.trim(), document.getElementById('f-email').value.trim(), d.id);
+      }catch(e){ showErr('✘ Error al procesar: '+(e.message||e)); }
+    },
+
+    onError: ()=>showErr('✘ Error de PayPal. Inténtalo de nuevo.'),
+    onCancel: ()=>{ const el=document.getElementById('al-checkout'); el.className='alert-b a-info show'; el.textContent='Pago cancelado.'; }
+
+  }).render('#pp-btn');
+}
+
+async function genLicense(pk, username, email, orderId){
+  const p=PLANS[pk];
+  const days=pk==='lifetime'?36500:p.days;
+  try{
+    const r=await fetch(RENDER_URL+'/api/issue_public',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ username, email, days, license_type:p.type, max_devices:p.devs, paypal_order_id:orderId, plan:pk })
+    });
+    const data=await r.json();
+    if(data.key){
+      document.getElementById('s-form').style.display='none';
+      document.getElementById('s-success').style.display='block';
+      document.getElementById('suc-key').textContent=data.key;
+      document.getElementById('suc-meta').innerHTML=
+        `Plan: <b style="color:var(--white)">${p.name}</b> &nbsp;·&nbsp; `+
+        `Duración: <b style="color:var(--white)">${days>=36500?'∞ Lifetime':days+' días'}</b><br>`+
+        `Expira: <b style="color:var(--white)">${data.expires||'—'}</b>`;
+    } else {
+      showErr('✘ '+(data.error||'Error al generar la clave. Guarda tu ID de pago: '+orderId+' y contacta con soporte.'));
+    }
+  }catch(e){
+    showErr('✘ Error de red. Guarda tu ID de pago PayPal: '+orderId+' y contacta con soporte.');
+  }
+}
+
+function copyKey(){
+  navigator.clipboard.writeText(document.getElementById('suc-key').textContent).then(()=>{
+    const b=document.getElementById('copy-btn');
+    b.textContent='✓ Copiada'; setTimeout(()=>b.textContent='Copiar',1600);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  MISC
+// ══════════════════════════════════════════════════
+document.getElementById('yr').textContent=new Date().getFullYear();
+document.getElementById('overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeBuy(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeBuy(); });
+</script>
+</body>
+</html>

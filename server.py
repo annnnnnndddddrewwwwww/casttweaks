@@ -499,5 +499,166 @@ def get_settings():
 #  ENTRY POINT
 # ──══════════════════════════════════════════════════════════════
 
+@app.route("/", methods=["GET"])
+def index():
+    """Sirve la landing page."""
+    import os
+    from flask import send_from_directory
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "index.html")
+
+
+# ──══════════════════════════════════════════════════════════════
+#  RUTA PÚBLICA — Emitir licencia tras pago PayPal verificado
+# ──══════════════════════════════════════════════════════════════
+
+# IDs de pedidos PayPal ya procesados (anti-replay en memoria)
+_used_orders: set = set()
+
+# Precio mínimo esperado por plan y duración (validación anti-manipulación)
+_PLAN_BASE   = {"Basic": 5.0, "Pro": 10.0, "Lifetime": 15.0}
+_PLAN_XPM    = {"Basic": 1.0, "Pro": 1.5,  "Lifetime": 0.0}
+_MAX_DEVICES = {"Basic": 1,   "Pro": 2,     "Lifetime": 3}
+
+
+def _expected_price(license_type: str, days: int) -> float:
+    base = _PLAN_BASE.get(license_type, 5.0)
+    xpm  = _PLAN_XPM.get(license_type, 1.0)
+    if license_type == "Lifetime":
+        return base
+    extra_months = max(0, (days - 30) // 30)
+    return round(base + extra_months * xpm, 2)
+
+
+@app.route("/api/issue_public", methods=["POST"])
+def issue_public():
+    """
+    Emite una licencia tras un pago PayPal verificado.
+
+    Body: {
+        username       : str,
+        email          : str,
+        days           : int,
+        license_type   : "Basic" | "Pro" | "Lifetime",
+        max_devices    : int,
+        paypal_order_id: str,
+        plan           : str   (básicamente el mismo que license_type en minúscula)
+    }
+
+    ⚠ IMPORTANTE: Este endpoint verifica el pedido con la API de PayPal.
+       Debes añadir la variable de entorno PAYPAL_CLIENT_ID y PAYPAL_SECRET.
+    """
+    import requests as _req
+
+    ip   = _get_ip()
+    data = request.get_json(silent=True) or {}
+
+    username     = (data.get("username") or "").strip()
+    email        = (data.get("email") or "").strip()
+    days         = int(data.get("days", 30))
+    license_type = (data.get("license_type") or "Basic").strip()
+    max_devices  = int(data.get("max_devices", 1))
+    order_id     = (data.get("paypal_order_id") or "").strip()
+
+    # ── Validaciones básicas ────────────────────────────────────
+    if not username:
+        return jsonify({"error": "username requerido"}), 400
+    if not order_id:
+        return jsonify({"error": "paypal_order_id requerido"}), 400
+    if license_type not in LICENSE_TYPES:
+        return jsonify({"error": "Tipo de licencia inválido"}), 400
+    if days <= 0 or days > 36500:
+        return jsonify({"error": "días inválidos"}), 400
+
+    # ── Anti-replay: el mismo pedido no puede usarse dos veces ──
+    if order_id in _used_orders:
+        return jsonify({"error": "Este pedido ya fue procesado."}), 400
+
+    # ── Rate limiting (reutiliza el de /verify) ──────────────────
+    if _is_rate_limited(ip):
+        return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
+
+    # ── Verificación del pago con PayPal ─────────────────────────
+    paypal_client_id = os.environ.get("PAYPAL_CLIENT_ID", "")
+    paypal_secret    = os.environ.get("PAYPAL_SECRET", "")
+
+    if paypal_client_id and paypal_secret:
+        try:
+            # 1. Obtener token de acceso
+            token_resp = _req.post(
+                "https://api-m.paypal.com/v1/oauth2/token",
+                auth=(paypal_client_id, paypal_secret),
+                data={"grant_type": "client_credentials"},
+                timeout=10,
+            )
+            access_token = token_resp.json().get("access_token", "")
+
+            # 2. Consultar el pedido
+            order_resp = _req.get(
+                f"https://api-m.paypal.com/v2/checkout/orders/{order_id}",
+                headers={"Authorization": f"Bearer {access_token}"},
+                timeout=10,
+            )
+            order_data  = order_resp.json()
+            order_status = order_data.get("status", "")
+
+            if order_status != "COMPLETED":
+                return jsonify({"error": f"Pago no completado (estado: {order_status})."}), 402
+
+            # 3. Verificar importe
+            paid_str = (
+                order_data.get("purchase_units", [{}])[0]
+                .get("payments", {})
+                .get("captures", [{}])[0]
+                .get("amount", {})
+                .get("value", "0")
+            )
+            paid = float(paid_str)
+            expected = _expected_price(license_type, days)
+
+            if paid < expected - 0.01:   # margen de 1 céntimo por redondeos
+                return jsonify({"error": f"Importe insuficiente (recibido €{paid:.2f}, esperado €{expected:.2f})."}), 402
+
+        except Exception as e:
+            # Si no podemos verificar, rechazamos por seguridad
+            return jsonify({"error": f"No se pudo verificar el pago con PayPal: {str(e)}"}), 500
+    else:
+        # Sin credenciales de PayPal configuradas → modo desarrollo (no usar en producción)
+        pass
+
+    # ── Emitir licencia ──────────────────────────────────────────
+    _used_orders.add(order_id)
+
+    max_devices = _MAX_DEVICES.get(license_type, 1)
+    key = generate_license(username, days, "")
+    exp = (date.today() + timedelta(days=days)).isoformat()
+
+    db = _ensure_keys(_load_db())
+    db["licenses"][key] = {
+        "username":      username,
+        "expires":       exp,
+        "note":          f"Compra web · email:{email} · PayPal:{order_id[:16]}",
+        "license_type":  license_type,
+        "max_devices":   max_devices,
+        "bound_devices": [],
+        "issued_at":     datetime.utcnow().isoformat(),
+        "revoked":       False,
+        "revoke_reason": "",
+        "uses":          0,
+        "last_seen":     "",
+        "last_ip":       ip,
+        "first_use":     "",
+        "email":         email,
+        "paypal_order":  order_id,
+    }
+    _save_db(db)
+
+    return jsonify({
+        "key":          key,
+        "username":     username,
+        "expires":      exp,
+        "license_type": license_type,
+    })
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
