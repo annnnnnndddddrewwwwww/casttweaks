@@ -614,6 +614,253 @@ def validate_discount_code():
         "message":  f"✓ {entry['discount']}% de descuento aplicado.",
     })
 
+
+# ──══════════════════════════════════════════════════════════════
+#  EMAIL — Envío de clave al comprador
+# ──══════════════════════════════════════════════════════════════
+
+# Variables de entorno para Gmail SMTP:
+#   MAIL_USER  → tu cuenta Gmail  (ej: casttweaks@gmail.com)
+#   MAIL_PASS  → contraseña de aplicación de Google (16 chars)
+#   MAIL_FROM  → remitente visible (opcional, default=MAIL_USER)
+
+def _send_license_email(
+    to_email: str,
+    username: str,
+    key: str,
+    plan_name: str,
+    expires: str,
+    is_free: bool = False,
+):
+    """Envía la clave de licencia al comprador por email. Falla silenciosamente."""
+    import smtplib, ssl
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text      import MIMEText
+
+    mail_user = os.environ.get("MAIL_USER", "")
+    mail_pass = os.environ.get("MAIL_PASS", "")
+    if not mail_user or not mail_pass:
+        return  # no configurado → skip silencioso
+
+    mail_from = os.environ.get("MAIL_FROM", mail_user)
+
+    duracion = "∞ Lifetime" if expires == "9999-12-31" or int(expires[:4]) > 2090 else expires
+    tipo_compra = "regalo" if is_free else "compra"
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#07000f;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#07000f;padding:40px 0">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#120028;border:1px solid #2a0055;border-radius:20px;overflow:hidden;max-width:560px;width:100%">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#9b30ff,#e040fb);padding:32px 40px;text-align:center">
+            <p style="margin:0;font-size:28px;font-weight:900;letter-spacing:4px;color:#fff;text-transform:uppercase">CASTTWEAKS®</p>
+            <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,.8);letter-spacing:2px;text-transform:uppercase">Optimización Premium para tu PC</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px">
+            <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#f0e8ff">Hola, {username} 👋</p>
+            <p style="margin:0 0 28px;font-size:15px;color:#9980bb;line-height:1.7">
+              ¡Gracias por tu {tipo_compra}! Tu licencia <strong style="color:#e040fb">{plan_name}</strong> ya está lista.<br>
+              Aquí tienes tu clave de activación:
+            </p>
+
+            <!-- Key box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(155,48,255,.1);border:1px solid rgba(155,48,255,.4);border-radius:12px;margin-bottom:28px">
+              <tr>
+                <td style="padding:20px 24px">
+                  <p style="margin:0 0 6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9980bb">Tu clave de licencia</p>
+                  <p style="margin:0;font-size:13px;font-family:'Courier New',monospace;color:#e040fb;word-break:break-all;font-weight:700;letter-spacing:1px">{key}</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Details -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #2a0055;font-size:13px;color:#9980bb">Plan</td>
+                <td style="padding:10px 0;border-bottom:1px solid #2a0055;font-size:13px;color:#f0e8ff;text-align:right;font-weight:600">{plan_name}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;font-size:13px;color:#9980bb">Válido hasta</td>
+                <td style="padding:10px 0;font-size:13px;color:#f0e8ff;text-align:right;font-weight:600">{duracion}</td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 28px;font-size:14px;color:#9980bb;line-height:1.7">
+              Guarda esta clave en un lugar seguro. Si tienes cualquier problema con la activación, escríbenos y te ayudamos enseguida.
+            </p>
+
+            <!-- CTA -->
+            <table cellpadding="0" cellspacing="0" style="margin-bottom:32px">
+              <tr>
+                <td style="background:linear-gradient(135deg,#9b30ff,#e040fb);border-radius:10px;padding:14px 28px">
+                  <a href="mailto:casttweaks@gmail.com" style="color:#fff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Contactar soporte</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;font-size:13px;color:#9980bb;line-height:1.7">
+              Un saludo,<br>
+              <strong style="color:#e040fb">El equipo de CastTweaks®</strong>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#0d0020;padding:20px 40px;border-top:1px solid #2a0055;text-align:center">
+            <p style="margin:0;font-size:11px;color:#4a3366;letter-spacing:1px">© {datetime.utcnow().year} CastTweaks® · Todos los derechos reservados</p>
+            <p style="margin:6px 0 0;font-size:11px;color:#4a3366">casttweaks@gmail.com</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"🎮 Tu licencia CastTweaks® {plan_name} — Clave de activación"
+    msg["From"]    = f"CastTweaks® <{mail_from}>"
+    msg["To"]      = to_email
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    try:
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as srv:
+            srv.login(mail_user, mail_pass)
+            srv.sendmail(mail_from, to_email, msg.as_string())
+    except Exception as e:
+        # Log pero no interrumpir el flujo principal
+        print(f"[MAIL ERROR] {e}", flush=True)
+
+
+# ──══════════════════════════════════════════════════════════════
+#  RUTA PÚBLICA — Emitir licencia gratuita con código 100% dto
+# ──══════════════════════════════════════════════════════════════
+
+@app.route("/api/issue_free", methods=["POST"])
+def issue_free():
+    """
+    Emite una licencia cuando el código de descuento deja el precio en €0.
+
+    Body: {
+        username      : str,
+        email         : str,
+        days          : int,
+        license_type  : "Basic" | "Pro" | "Lifetime",
+        max_devices   : int,
+        plan          : str,
+        discount_code : str   ← OBLIGATORIO y debe valer 100%
+    }
+    """
+    ip   = _get_ip()
+    data = request.get_json(silent=True) or {}
+
+    username      = (data.get("username")      or "").strip()
+    email         = (data.get("email")         or "").strip()
+    days          = int(data.get("days", 30))
+    license_type  = (data.get("license_type")  or "Basic").strip()
+    discount_code = (data.get("discount_code") or "").strip().upper()
+
+    # ── Validaciones básicas ────────────────────────────────────
+    if not username:
+        return jsonify({"error": "username requerido"}), 400
+    if not email:
+        return jsonify({"error": "email requerido"}), 400
+    if license_type not in LICENSE_TYPES:
+        return jsonify({"error": "Tipo de licencia inválido"}), 400
+    if days <= 0 or days > 36500:
+        return jsonify({"error": "días inválidos"}), 400
+    if not discount_code:
+        return jsonify({"error": "Se requiere un código de descuento del 100%."}), 400
+
+    # ── Rate limiting ────────────────────────────────────────────
+    if _is_rate_limited(ip):
+        return jsonify({"error": "Demasiadas peticiones. Espera un momento."}), 429
+
+    db = _ensure_keys(_load_db())
+
+    # ── Modo mantenimiento ──────────────────────────────────────
+    if db["settings"].get("maintenance"):
+        msg = db["settings"].get("maintenance_msg", "Servicio en mantenimiento.")
+        return jsonify({"error": f"🔧 {msg}"}), 503
+
+    # ── Validar que el código exista, esté activo y sea del 100% ─
+    dc = db["discount_codes"].get(discount_code)
+    if not dc:
+        return jsonify({"error": "Código de descuento no válido."}), 400
+    if not dc.get("active", True):
+        return jsonify({"error": "Este código está desactivado."}), 400
+    if dc["max_uses"] > 0 and dc["uses"] >= dc["max_uses"]:
+        return jsonify({"error": "Este código ha alcanzado el límite de usos."}), 400
+    if dc.get("expires_at"):
+        try:
+            if date.fromisoformat(dc["expires_at"]) < date.today():
+                return jsonify({"error": "Este código ha expirado."}), 400
+        except Exception:
+            pass
+    if dc.get("plans") and license_type.lower() not in dc["plans"]:
+        return jsonify({"error": f"Código no válido para el plan '{license_type}'."}), 400
+
+    # ── SEGURIDAD: solo emitir si el descuento es realmente 100% ─
+    if int(dc["discount"]) != 100:
+        return jsonify({"error": "Este código no cubre el precio completo."}), 400
+
+    # ── Emitir licencia ──────────────────────────────────────────
+    # Consumir uso del código
+    db["discount_codes"][discount_code]["uses"] += 1
+
+    max_devices = _MAX_DEVICES.get(license_type, 1)
+    key         = generate_license(username, days, "")
+    exp         = (date.today() + timedelta(days=days)).isoformat()
+
+    db["licenses"][key] = {
+        "username":      username,
+        "expires":       exp,
+        "note":          f"Clave gratuita · email:{email} · Dto:{discount_code}(100%)",
+        "license_type":  license_type,
+        "max_devices":   max_devices,
+        "bound_devices": [],
+        "issued_at":     datetime.utcnow().isoformat(),
+        "revoked":       False,
+        "revoke_reason": "",
+        "uses":          0,
+        "last_seen":     "",
+        "last_ip":       ip,
+        "first_use":     "",
+        "email":         email,
+        "paypal_order":  "FREE",
+    }
+    _save_db(db)
+
+    # ── Enviar email de confirmación ──────────────────────────────
+    _send_license_email(
+        to_email  = email,
+        username  = username,
+        key       = key,
+        plan_name = license_type,
+        expires   = exp,
+        is_free   = True,
+    )
+
+    return jsonify({
+        "key":          key,
+        "username":     username,
+        "expires":      exp,
+        "license_type": license_type,
+    })
+
+
 # ──══════════════════════════════════════════════════════════════
 #  ENTRY POINT
 # ──══════════════════════════════════════════════════════════════
@@ -794,6 +1041,16 @@ def issue_public():
         "paypal_order":  order_id,
     }
     _save_db(db)
+
+    # ── Enviar email de confirmación ──────────────────────────────
+    _send_license_email(
+        to_email  = email,
+        username  = username,
+        key       = key,
+        plan_name = {"basic":"Basic","pro":"Pro","lifetime":"Lifetime"}.get(data.get("plan","").lower(), license_type),
+        expires   = exp,
+        is_free   = False,
+    )
 
     return jsonify({
         "key":          key,
