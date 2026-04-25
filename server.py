@@ -270,10 +270,12 @@ def require_owner(f):
 # ══════════════════════════════════════════════════════════════════
 
 def _send_license_email(to_email, username, key, plan_name, expires, is_free=False):
-    """Envía la clave al comprador. Falla silenciosamente si no hay credenciales."""
+    """Envía la clave al comprador junto con el .exe adjunto. Falla silenciosamente si no hay credenciales."""
     import smtplib, ssl
     from email.mime.multipart import MIMEMultipart
     from email.mime.text      import MIMEText
+    from email.mime.base      import MIMEBase
+    from email                import encoders
 
     mail_user = os.environ.get("MAIL_USER", "")
     mail_pass = os.environ.get("MAIL_PASS", "")
@@ -283,81 +285,274 @@ def _send_license_email(to_email, username, key, plan_name, expires, is_free=Fal
     mail_from  = os.environ.get("MAIL_FROM", mail_user)
     tipo       = "regalo" if is_free else "compra"
     duracion   = "∞ Lifetime" if expires and int(expires[:4]) > 2090 else expires
+    year       = datetime.utcnow().year
+
+    # Badge de plan con color según tier
+    plan_colors = {"Basic": "#7c3aed", "Pro": "#9b30ff", "Lifetime": "#e040fb"}
+    plan_color  = plan_colors.get(plan_name, "#9b30ff")
+
+    # Icono según tipo de licencia
+    plan_icons  = {"Basic": "⚡", "Pro": "🚀", "Lifetime": "♾️"}
+    plan_icon   = plan_icons.get(plan_name, "🎮")
 
     html_body = f"""<!DOCTYPE html>
 <html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#07000f;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#07000f;padding:40px 0">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CastTweaks® — Tu licencia</title>
+</head>
+<body style="margin:0;padding:0;background:#07000f;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#07000f;min-height:100vh;padding:48px 16px;">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0"
-             style="background:#120028;border:1px solid #2a0055;border-radius:20px;overflow:hidden;max-width:560px;width:100%">
+
+      <!-- Contenedor principal -->
+      <table width="600" cellpadding="0" cellspacing="0"
+             style="max-width:600px;width:100%;border-radius:24px;overflow:hidden;
+                    box-shadow:0 0 80px rgba(155,48,255,0.25);">
+
+        <!-- ═══ HEADER ═══ -->
         <tr>
-          <td style="background:linear-gradient(135deg,#9b30ff,#e040fb);padding:32px 40px;text-align:center">
-            <p style="margin:0;font-size:28px;font-weight:900;letter-spacing:4px;color:#fff;text-transform:uppercase">CASTTWEAKS®</p>
-            <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,.8);letter-spacing:2px;text-transform:uppercase">Optimización Premium para tu PC</p>
+          <td style="background:linear-gradient(135deg,#6d10d6 0%,#a020f0 50%,#e040fb 100%);
+                     padding:40px 48px 36px;text-align:center;">
+            <!-- Logo text -->
+            <p style="margin:0;font-size:11px;letter-spacing:6px;color:rgba(255,255,255,0.6);
+                      text-transform:uppercase;font-weight:600;">Bienvenido a</p>
+            <h1 style="margin:10px 0 0;font-size:36px;font-weight:900;letter-spacing:6px;
+                        color:#ffffff;text-transform:uppercase;
+                        text-shadow:0 0 30px rgba(255,255,255,0.4);">CASTTWEAKS®</h1>
+            <p style="margin:12px 0 0;font-size:12px;color:rgba(255,255,255,0.75);
+                      letter-spacing:3px;text-transform:uppercase;font-weight:500;">
+              Optimización Premium para tu PC
+            </p>
+            <!-- Divider -->
+            <div style="margin:24px auto 0;width:60px;height:2px;
+                        background:rgba(255,255,255,0.3);border-radius:2px;"></div>
           </td>
         </tr>
+
+        <!-- ═══ PLAN BADGE ═══ -->
         <tr>
-          <td style="padding:36px 40px">
-            <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#f0e8ff">Hola, {username} 👋</p>
-            <p style="margin:0 0 28px;font-size:15px;color:#9980bb;line-height:1.7">
-              ¡Gracias por tu {tipo}! Tu licencia <strong style="color:#e040fb">{plan_name}</strong> ya está lista.<br>
-              Aquí tienes tu clave de activación:
+          <td style="background:#0f0022;padding:0 48px;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="padding:28px 0 0;">
+                  <span style="display:inline-block;background:linear-gradient(135deg,{plan_color}33,{plan_color}22);
+                               border:1px solid {plan_color}88;border-radius:50px;
+                               padding:10px 28px;font-size:13px;font-weight:700;
+                               color:{plan_color};letter-spacing:2px;text-transform:uppercase;">
+                    {plan_icon} &nbsp; Licencia {plan_name}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ═══ SALUDO ═══ -->
+        <tr>
+          <td style="background:#0f0022;padding:28px 48px 0;">
+            <h2 style="margin:0 0 10px;font-size:24px;font-weight:700;color:#f5edff;">
+              Hola, {username} 👋
+            </h2>
+            <p style="margin:0;font-size:15px;color:#a08cc0;line-height:1.8;">
+              {'¡Gracias por tu confianza!' if not is_free else '¡Aquí tienes tu acceso gratuito!'}&nbsp;
+              Tu licencia <strong style="color:#e040fb;">{plan_name}</strong> ya está activa y lista para usar.<br>
+              A continuación encontrarás tu clave de activación y el instalador de <strong style="color:#fff;">CastTweaks®</strong>.
             </p>
+          </td>
+        </tr>
+
+        <!-- ═══ CLAVE DE LICENCIA ═══ -->
+        <tr>
+          <td style="background:#0f0022;padding:28px 48px 0;">
             <table width="100%" cellpadding="0" cellspacing="0"
-                   style="background:rgba(155,48,255,.1);border:1px solid rgba(155,48,255,.4);border-radius:12px;margin-bottom:28px">
+                   style="background:linear-gradient(135deg,rgba(155,48,255,0.12),rgba(224,64,251,0.08));
+                          border:1px solid rgba(155,48,255,0.5);border-radius:16px;overflow:hidden;">
               <tr>
-                <td style="padding:20px 24px">
-                  <p style="margin:0 0 6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9980bb">Tu clave de licencia</p>
-                  <p style="margin:0;font-size:13px;font-family:'Courier New',monospace;color:#e040fb;word-break:break-all;font-weight:700;letter-spacing:1px">{key}</p>
+                <td style="padding:8px 24px 4px;">
+                  <p style="margin:0;font-size:10px;letter-spacing:3px;text-transform:uppercase;
+                            color:#9b30ff;font-weight:700;">🔑 &nbsp; Tu clave de licencia</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:4px 24px 16px;">
+                  <p style="margin:0;font-size:13px;font-family:'Courier New',Courier,monospace;
+                            color:#e040fb;word-break:break-all;font-weight:700;letter-spacing:1.5px;
+                            line-height:1.8;">{key}</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background:rgba(155,48,255,0.1);padding:10px 24px;border-top:1px solid rgba(155,48,255,0.2);">
+                  <p style="margin:0;font-size:11px;color:#7a5a9a;">
+                    💡 Guarda esta clave en un lugar seguro — la necesitarás para activar el programa.
+                  </p>
                 </td>
               </tr>
             </table>
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
-              <tr>
-                <td style="padding:10px 0;border-bottom:1px solid #2a0055;font-size:13px;color:#9980bb">Plan</td>
-                <td style="padding:10px 0;border-bottom:1px solid #2a0055;font-size:13px;color:#f0e8ff;text-align:right;font-weight:600">{plan_name}</td>
-              </tr>
-              <tr>
-                <td style="padding:10px 0;font-size:13px;color:#9980bb">Válido hasta</td>
-                <td style="padding:10px 0;font-size:13px;color:#f0e8ff;text-align:right;font-weight:600">{duracion}</td>
-              </tr>
-            </table>
-            <p style="margin:0 0 28px;font-size:14px;color:#9980bb;line-height:1.7">
-              Guarda esta clave en un lugar seguro. Si tienes cualquier problema con la activación escríbenos y te ayudamos enseguida.
-            </p>
-            <table cellpadding="0" cellspacing="0" style="margin-bottom:32px">
-              <tr>
-                <td style="background:linear-gradient(135deg,#9b30ff,#e040fb);border-radius:10px;padding:14px 28px">
-                  <a href="mailto:casttweaks@gmail.com"
-                     style="color:#fff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Contactar soporte</a>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:0;font-size:13px;color:#9980bb;line-height:1.7">
-              Un saludo,<br>
-              <strong style="color:#e040fb">El equipo de CastTweaks®</strong>
-            </p>
           </td>
         </tr>
+
+        <!-- ═══ DETALLES DEL PLAN ═══ -->
         <tr>
-          <td style="background:#0d0020;padding:20px 40px;border-top:1px solid #2a0055;text-align:center">
-            <p style="margin:0;font-size:11px;color:#4a3366;letter-spacing:1px">© {datetime.utcnow().year} CastTweaks® · Todos los derechos reservados</p>
-            <p style="margin:6px 0 0;font-size:11px;color:#4a3366">casttweaks@gmail.com</p>
+          <td style="background:#0f0022;padding:24px 48px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="border:1px solid #1e0040;border-radius:14px;overflow:hidden;">
+              <tr style="background:#160030;">
+                <td style="padding:12px 20px;font-size:12px;letter-spacing:2px;
+                           text-transform:uppercase;color:#7a5a9a;font-weight:600;
+                           border-bottom:1px solid #1e0040;" colspan="2">
+                  Detalles de tu licencia
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:14px 20px;font-size:13px;color:#8a6aaa;
+                           border-bottom:1px solid #1a0035;">📦 Plan</td>
+                <td style="padding:14px 20px;font-size:13px;color:#f0e8ff;
+                           text-align:right;font-weight:600;border-bottom:1px solid #1a0035;">
+                  {plan_name}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:14px 20px;font-size:13px;color:#8a6aaa;">📅 Válido hasta</td>
+                <td style="padding:14px 20px;font-size:13px;color:#e040fb;
+                           text-align:right;font-weight:700;">{duracion}</td>
+              </tr>
+            </table>
           </td>
         </tr>
+
+        <!-- ═══ INSTRUCCIONES EXE ═══ -->
+        <tr>
+          <td style="background:#0f0022;padding:24px 48px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="background:rgba(255,255,255,0.02);border:1px solid #1e0040;
+                          border-radius:14px;overflow:hidden;">
+              <tr style="background:#160030;">
+                <td style="padding:12px 20px;font-size:12px;letter-spacing:2px;
+                           text-transform:uppercase;color:#7a5a9a;font-weight:600;
+                           border-bottom:1px solid #1e0040;">
+                  🖥️ &nbsp; Cómo instalar CastTweaks®
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 20px;">
+                  <table cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td width="28" style="vertical-align:top;padding-top:1px;">
+                        <span style="display:inline-block;width:22px;height:22px;background:{plan_color};
+                                     border-radius:50%;text-align:center;line-height:22px;
+                                     font-size:11px;font-weight:700;color:#fff;">1</span>
+                      </td>
+                      <td style="padding-left:10px;font-size:13px;color:#a08cc0;line-height:1.7;
+                                 padding-bottom:12px;">
+                        Descarga el archivo <strong style="color:#fff;">CastTweaks.exe</strong> adjunto a este correo.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td width="28" style="vertical-align:top;padding-top:1px;">
+                        <span style="display:inline-block;width:22px;height:22px;background:{plan_color};
+                                     border-radius:50%;text-align:center;line-height:22px;
+                                     font-size:11px;font-weight:700;color:#fff;">2</span>
+                      </td>
+                      <td style="padding-left:10px;font-size:13px;color:#a08cc0;line-height:1.7;
+                                 padding-bottom:12px;">
+                        Ejecuta el instalador como <strong style="color:#fff;">Administrador</strong>.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td width="28" style="vertical-align:top;padding-top:1px;">
+                        <span style="display:inline-block;width:22px;height:22px;background:{plan_color};
+                                     border-radius:50%;text-align:center;line-height:22px;
+                                     font-size:11px;font-weight:700;color:#fff;">3</span>
+                      </td>
+                      <td style="padding-left:10px;font-size:13px;color:#a08cc0;line-height:1.7;">
+                        Introduce tu clave de licencia cuando el programa te la solicite.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ═══ SOPORTE ═══ -->
+        <tr>
+          <td style="background:#0f0022;padding:28px 48px 36px;">
+            <p style="margin:0 0 20px;font-size:13px;color:#8a6aaa;line-height:1.8;">
+              ¿Algún problema con la activación? Nuestro equipo de soporte está aquí para ayudarte.
+            </p>
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background:linear-gradient(135deg,#7c3aed,#e040fb);
+                           border-radius:12px;padding:14px 32px;">
+                  <a href="mailto:casttweaks@gmail.com"
+                     style="color:#ffffff;text-decoration:none;font-size:12px;
+                            font-weight:700;letter-spacing:2px;text-transform:uppercase;">
+                    ✉ &nbsp; Contactar soporte
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:28px 0 0;font-size:14px;color:#9980bb;line-height:1.8;">
+              Un saludo,<br>
+              <strong style="color:#e040fb;font-size:15px;">El equipo de CastTweaks®</strong>
+            </p>
+          </td>
+        </tr>
+
+        <!-- ═══ FOOTER ═══ -->
+        <tr>
+          <td style="background:#080015;padding:20px 48px;
+                     border-top:1px solid #1e0040;text-align:center;">
+            <p style="margin:0;font-size:11px;color:#3d2560;letter-spacing:1px;">
+              © {year} CastTweaks® · Todos los derechos reservados
+            </p>
+            <p style="margin:6px 0 0;font-size:11px;color:#3d2560;">
+              casttweaks@gmail.com
+            </p>
+          </td>
+        </tr>
+
       </table>
     </td></tr>
   </table>
 </body>
 </html>"""
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"🎮 Tu licencia CastTweaks® {plan_name} — Clave de activación"
+    # ── Construir el correo con adjunto ──────────────────────────────────
+    msg = MIMEMultipart("mixed")
+    msg["Subject"] = f"🎮 Tu licencia CastTweaks® {plan_name} — Clave + Instalador"
     msg["From"]    = f"CastTweaks® <{mail_from}>"
     msg["To"]      = to_email
+
+    # Parte HTML
     msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    # Adjuntar el .exe (buscar junto al script o en el directorio de trabajo)
+    exe_name = "CastTweaks.exe"
+    exe_paths = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), exe_name),
+        os.path.join(os.getcwd(), exe_name),
+    ]
+    exe_path = next((p for p in exe_paths if os.path.isfile(p)), None)
+
+    if exe_path:
+        try:
+            with open(exe_path, "rb") as f:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(f.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f'attachment; filename="{exe_name}"',
+            )
+            msg.attach(part)
+        except Exception as e:
+            print(f"[MAIL] No se pudo adjuntar el .exe: {e}", flush=True)
+    else:
+        print(f"[MAIL] Advertencia: no se encontró {exe_name} para adjuntar.", flush=True)
 
     try:
         ctx = ssl.create_default_context()
