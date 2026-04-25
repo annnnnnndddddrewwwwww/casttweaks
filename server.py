@@ -270,21 +270,20 @@ def require_owner(f):
 # ══════════════════════════════════════════════════════════════════
 
 def _send_license_email(to_email, username, key, plan_name, expires, is_free=False):
-    """Envía la clave al comprador con el instalador adjunto en ZIP. Falla silenciosamente si no hay credenciales."""
-    import smtplib, ssl, zipfile, io
+    """Envía la clave al comprador con botón de descarga del instalador. Falla silenciosamente si no hay credenciales."""
+    import smtplib, ssl
     from email.mime.multipart import MIMEMultipart
     from email.mime.text      import MIMEText
-    from email.mime.base      import MIMEBase
-    from email                import encoders
 
     mail_user = os.environ.get("MAIL_USER", "")
     mail_pass = os.environ.get("MAIL_PASS", "")
     if not mail_user or not mail_pass:
         return
 
-    mail_from = os.environ.get("MAIL_FROM", mail_user)
-    duracion  = "&#8734; Lifetime" if expires and int(expires[:4]) > 2090 else expires
-    year      = datetime.utcnow().year
+    mail_from    = os.environ.get("MAIL_FROM", mail_user)
+    duracion     = "&#8734; Lifetime" if expires and int(expires[:4]) > 2090 else expires
+    year         = datetime.utcnow().year
+    download_url = "https://github.com/annnnnnndddddrewwwwww/casttweaks/releases/tag/NewV1"
 
     plan_color = {"Basic": "#7c3aed", "Pro": "#9b30ff", "Lifetime": "#e040fb"}.get(plan_name, "#9b30ff")
     plan_icon  = {"Basic": "&#9889;", "Pro": "&#128640;", "Lifetime": "&#9854;"}.get(plan_name, "&#127918;")
@@ -327,7 +326,7 @@ def _send_license_email(to_email, username, key, plan_name, expires, is_free=Fal
       <p style="margin:0;font-size:15px;color:#a08cc0;line-height:1.8;">
         {'&#161;Gracias por tu confianza!' if not is_free else '&#161;Aqui tienes tu acceso gratuito!'}&nbsp;
         Tu licencia <strong style="color:#e040fb;">{plan_name}</strong> ya esta activa.<br>
-        Encontraras tu clave abajo y el instalador adjunto en un archivo <strong style="color:#fff;">ZIP</strong>.
+        Aqui tienes tu clave y el enlace para descargar el instalador.
       </p>
     </td>
   </tr>
@@ -374,6 +373,25 @@ def _send_license_email(to_email, username, key, plan_name, expires, is_free=Fal
     </td>
   </tr>
 
+  <!-- BOTON DESCARGA -->
+  <tr>
+    <td style="background:#0f0022;padding:28px 48px 0;text-align:center;">
+      <p style="margin:0 0 16px;font-size:13px;color:#8a6aaa;">Descarga el instalador desde el siguiente enlace:</p>
+      <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid {plan_color};border-radius:14px;padding:18px 36px;">
+            <a href="{download_url}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;letter-spacing:1px;">
+              &#11015; &nbsp; Descargar CastTweaks.exe
+            </a>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:12px 0 0;font-size:11px;color:#4a3366;">Si el boton no funciona copia este enlace en tu navegador:<br>
+        <span style="color:#9b30ff;">{download_url}</span>
+      </p>
+    </td>
+  </tr>
+
   <!-- INSTRUCCIONES -->
   <tr>
     <td style="background:#0f0022;padding:20px 48px 0;">
@@ -391,7 +409,7 @@ def _send_license_email(to_email, username, key, plan_name, expires, is_free=Fal
                   <span style="display:inline-block;width:24px;height:24px;background:{plan_color};border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#fff;">1</span>
                 </td>
                 <td style="padding-left:12px;font-size:13px;color:#a08cc0;line-height:1.7;padding-bottom:14px;">
-                  Descarga el archivo <strong style="color:#fff;">CastTweaks.zip</strong> adjunto a este correo y descomprimelo.
+                  Pulsa el boton de descarga de arriba y descarga <strong style="color:#fff;">CastTweaks.exe</strong>.
                 </td>
               </tr>
               <tr>
@@ -399,7 +417,7 @@ def _send_license_email(to_email, username, key, plan_name, expires, is_free=Fal
                   <span style="display:inline-block;width:24px;height:24px;background:{plan_color};border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#fff;">2</span>
                 </td>
                 <td style="padding-left:12px;font-size:13px;color:#a08cc0;line-height:1.7;padding-bottom:14px;">
-                  Haz clic derecho en <strong style="color:#fff;">CastTweaks.exe</strong> y selecciona <strong style="color:#fff;">Ejecutar como administrador</strong>.
+                  Haz clic derecho y selecciona <strong style="color:#fff;">Ejecutar como administrador</strong>.
                 </td>
               </tr>
               <tr>
@@ -407,7 +425,7 @@ def _send_license_email(to_email, username, key, plan_name, expires, is_free=Fal
                   <span style="display:inline-block;width:24px;height:24px;background:{plan_color};border-radius:50%;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#fff;">3</span>
                 </td>
                 <td style="padding-left:12px;font-size:13px;color:#a08cc0;line-height:1.7;">
-                  Introduce la clave de licencia cuando el programa te la pida.
+                  Introduce tu clave de licencia cuando el programa te la pida.
                 </td>
               </tr>
             </table>
@@ -453,36 +471,11 @@ def _send_license_email(to_email, username, key, plan_name, expires, is_free=Fal
 </body>
 </html>"""
 
-    # ── Construir mensaje ────────────────────────────────────────────────
-    msg = MIMEMultipart("mixed")
+    msg = MIMEMultipart("alternative")
     msg["Subject"] = f"[CastTweaks] Tu licencia {plan_name} + Instalador"
     msg["From"]    = f"CastTweaks(r) <{mail_from}>"
     msg["To"]      = to_email
     msg.attach(MIMEText(html_body, "html", "utf-8"))
-
-    # Adjuntar CastTweaks.exe comprimido en ZIP (Gmail bloquea .exe directo)
-    exe_name  = "CastTweaks.exe"
-    zip_name  = "CastTweaks.zip"
-    exe_path  = os.path.join(os.path.dirname(os.path.abspath(__file__)), exe_name)
-
-    if os.path.isfile(exe_path):
-        try:
-            # Crear ZIP en memoria
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-                zf.write(exe_path, exe_name)
-            zip_buffer.seek(0)
-
-            part = MIMEBase("application", "zip")
-            part.set_payload(zip_buffer.read())
-            encoders.encode_base64(part)
-            part.add_header("Content-Disposition", f'attachment; filename="{zip_name}"')
-            msg.attach(part)
-            print(f"[MAIL] ZIP adjuntado correctamente ({zip_name})", flush=True)
-        except Exception as e:
-            print(f"[MAIL] Error creando ZIP: {e}", flush=True)
-    else:
-        print(f"[MAIL] AVISO: No se encontro {exe_name} en {exe_path}", flush=True)
 
     try:
         ctx = ssl.create_default_context()
