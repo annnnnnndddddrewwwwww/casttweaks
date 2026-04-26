@@ -1117,14 +1117,40 @@ footer {
 // ══════════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════════
-const RENDER_URL = 'https://casttweaks.onrender.com';
+
+// !! IMPORTANTE: cambia esta URL por la de tu proyecto en Vercel
+// Ejemplo: 'https://casttweaks.vercel.app'
+// En local usa '' (cadena vacía) para que las rutas sean relativas
+const RENDER_URL = '';
+
+// Debe coincidir EXACTAMENTE con OWNER_SECRET en el servidor (variable de entorno)
+const OWNER_SECRET = 'CASTTWEAKS_SECRET_2024_DONT_SHARE';
+
 const PLANS = {
-  basic:    { name:'Basic',    base:5,     xpm:2,   days:30, col:'#9b30ff', type:'basic',    devs:1 },
-  pro:      { name:'Pro',      base:10,    xpm:3.5, days:30, col:'#e040fb', type:'pro',      devs:3 },
-  lifetime: { name:'Lifetime', base:39.99, xpm:0,   days:36500, col:'#ff6d00', type:'lifetime', devs:5 }
+  basic:    { name:'Basic',    base:5,     xpm:2,   days:30, col:'#9b30ff', type:'Basic',    devs:1 },
+  pro:      { name:'Pro',      base:10,    xpm:3.5, days:30, col:'#e040fb', type:'Pro',      devs:3 },
+  lifetime: { name:'Lifetime', base:39.99, xpm:0,   days:36500, col:'#ff6d00', type:'Lifetime', devs:5 }
 };
 let activePlan     = null;
-let activeDiscount = { code: '', pct: 0 };  // código de descuento activo
+let activeDiscount = { code: '', pct: 0 };
+
+// ══════════════════════════════════════════════════
+//  HMAC-SHA256 (Web Crypto API — nativo en todos los navegadores modernos)
+// ══════════════════════════════════════════════════
+async function _hmacSign(fields) {
+  const ts  = Math.floor(Date.now() / 1000);
+  const msg = [String(ts), ...fields.map(f => String(f ?? ''))].join(':');
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(OWNER_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const buf = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
+  const sig  = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return { ts, sig };
+}
 
 // ══════════════════════════════════════════════════
 //  GSAP SETUP
@@ -1401,10 +1427,12 @@ async function applyDiscount() {
   if (!code) { msg.style.color = '#ff8fa3'; msg.textContent = '✘ Introduce un código.'; return; }
   msg.style.color = '#888'; msg.textContent = 'Validando...';
   try {
+    const plan = activePlan || '';
+    const { ts, sig } = await _hmacSign([code, plan]);
     const r = await fetch(RENDER_URL + '/api/discount_codes/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, plan: activePlan })
+      body: JSON.stringify({ code, plan, ts, sig })
     });
     const d = await r.json();
     if (d.valid) {
@@ -1552,11 +1580,13 @@ async function claimFreeKey() {
   const btn = document.getElementById('free-key-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="sp"></span> Generando clave...'; }
 
-  const pk = activePlan;
-  const p  = PLANS[pk];
+  const pk   = activePlan;
+  const p    = PLANS[pk];
   const days = pk === 'lifetime' ? 36500 : p.days;
+  const discountCode = activeDiscount.code;
 
   try {
+    const { ts, sig } = await _hmacSign([user, email, discountCode]);
     const r = await fetch(RENDER_URL + '/api/issue_free', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1567,7 +1597,9 @@ async function claimFreeKey() {
         license_type:  p.type,
         max_devices:   p.devs,
         plan:          pk,
-        discount_code: activeDiscount.code
+        discount_code: discountCode,
+        ts,
+        sig
       })
     });
     const data = await r.json();
@@ -1589,19 +1621,40 @@ async function claimFreeKey() {
 }
 
 async function genLicense(pk, username, email, orderId, discountCode = '') {
-  const p = PLANS[pk];
+  const p    = PLANS[pk];
   const days = pk === 'lifetime' ? 36500 : p.days;
   try {
-    const r = await fetch(RENDER_URL + '/api/issue_public', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, days, license_type: p.type, max_devices: p.devs, paypal_order_id: orderId, plan: pk, discount_code: discountCode }) });
+    const { ts, sig } = await _hmacSign([username, email, orderId]);
+    const r = await fetch(RENDER_URL + '/api/issue_public', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        email,
+        days,
+        license_type:     p.type,
+        max_devices:      p.devs,
+        paypal_order_id:  orderId,
+        plan:             pk,
+        discount_code:    discountCode,
+        ts,
+        sig
+      })
+    });
     const data = await r.json();
     if (data.key) {
       document.getElementById('s-form').style.display = 'none';
       document.getElementById('s-success').style.display = 'block';
       document.getElementById('suc-key').textContent = data.key;
-      document.getElementById('suc-meta').innerHTML = `Plan: <b style="color:var(--white)">${p.name}</b> &nbsp;·&nbsp; Duración: <b style="color:var(--white)">${days >= 36500 ? '∞ Lifetime' : days + ' días'}</b><br>Expira: <b style="color:var(--white)">${data.expires || '—'}</b>`;
+      document.getElementById('suc-meta').innerHTML =
+        `Plan: <b style="color:var(--white)">${p.name}</b> &nbsp;·&nbsp; Duración: <b style="color:var(--white)">${days >= 36500 ? '∞ Lifetime' : days + ' días'}</b><br>Expira: <b style="color:var(--white)">${data.expires || '—'}</b>`;
       gsap.from('.suc-icon', { scale: 0, rotation: -90, duration: 0.7, ease: 'elastic.out(1, 0.7)' });
-    } else { showErr('✘ ' + (data.error || 'Error. Guarda tu ID: ' + orderId)); }
-  } catch (e) { showErr('✘ Error de red. ID de pago: ' + orderId); }
+    } else {
+      showErr('✘ ' + (data.error || 'Error. Guarda tu ID: ' + orderId));
+    }
+  } catch (e) {
+    showErr('✘ Error de red. ID de pago: ' + orderId);
+  }
 }
 
 function copyKey() {
