@@ -99,19 +99,24 @@ def handle_429(e): return jsonify({"error": "Demasiadas peticiones. Espera un mo
 def handle_500(e): return jsonify({"error": "Error interno del servidor. Contacta al soporte."}), 500
 
 # -- Proxy/VPN block -------------------------------------------------
+# Solo cabeceras que indican un proxy autenticado real.
+# Se eliminaron "Proxy-Connection" y "X-ProxyUser-Ip" porque generan
+# falsos positivos: infraestructuras CDN/Vercel y algunos clientes HTTP
+# las inyectan aunque el usuario no tenga VPN ni proxy activo.
 
 _PROXY_HEADERS = {
-    "X-Proxy-ID", "Proxy-Connection",
-    "X-ProxyUser-Ip", "Proxy-Authenticate", "Proxy-Authorization",
+    "Proxy-Authenticate",
+    "Proxy-Authorization",
 }
 
 def block_proxy(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         for header in _PROXY_HEADERS:
-            if request.headers.get(header):
+            val = request.headers.get(header)
+            if val:
                 ip = _get_ip()
-                print(f"[PROXY BLOCK] IP={ip} header={header}", flush=True)
+                print(f"[PROXY BLOCK] IP={ip} header={header} value={val!r}", flush=True)
                 return jsonify({
                     "error": "Conexion a traves de proxy o VPN detectada. "
                              "Desactiva tu VPN/proxy e intenta de nuevo."
