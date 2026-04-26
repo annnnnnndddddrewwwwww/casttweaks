@@ -1,0 +1,111 @@
+-- ══════════════════════════════════════════════════════════════════
+-- CTadvanced — Supabase Schema PATCH v4.1
+-- Migración incremental: ejecuta esto ADEMÁS del schema v4.0 original.
+-- Añade las tablas y funciones necesarias para el modo stateless (Vercel).
+--
+-- Si es una instalación nueva, ejecuta primero supabase_schema.sql
+-- y luego este archivo.
+-- ══════════════════════════════════════════════════════════════════
+
+
+-- ── HWID FAIL LOG ────────────────────────────────────────────────
+-- Reemplaza el dict _hwid_fail_log en memoria.
+-- Registra cada intento fallido por HWID con su timestamp.
+-- El servidor cuenta los fallos dentro de la ventana de tiempo
+-- para decidir si aplica un ban temporal.
+
+CREATE TABLE IF NOT EXISTS hwid_fail_log (
+    id      BIGSERIAL        PRIMARY KEY,
+    hwid    TEXT             NOT NULL,
+    ts      DOUBLE PRECISION NOT NULL    -- unix timestamp
+);
+
+CREATE INDEX IF NOT EXISTS idx_hwid_fail_log_hwid ON hwid_fail_log(hwid);
+CREATE INDEX IF NOT EXISTS idx_hwid_fail_log_ts   ON hwid_fail_log(ts);
+
+ALTER TABLE hwid_fail_log ENABLE ROW LEVEL SECURITY;
+-- Sin políticas = solo service_role puede acceder.
+
+
+-- ── RATE LIMIT LOG ───────────────────────────────────────────────
+-- Reemplaza el dict _rate_limit en memoria.
+-- Registra cada petición por IP con su timestamp.
+-- El servidor cuenta las peticiones en la ventana de 60 s.
+
+CREATE TABLE IF NOT EXISTS rate_limit_log (
+    id      BIGSERIAL        PRIMARY KEY,
+    ip      TEXT             NOT NULL,
+    ts      DOUBLE PRECISION NOT NULL    -- unix timestamp
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limit_log_ip ON rate_limit_log(ip);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_log_ts ON rate_limit_log(ts);
+
+ALTER TABLE rate_limit_log ENABLE ROW LEVEL SECURITY;
+-- Sin políticas = solo service_role puede acceder.
+
+
+-- ══════════════════════════════════════════════════════════════════
+-- FUNCIONES RPC NUEVAS
+-- ══════════════════════════════════════════════════════════════════
+
+-- Trunca hwid_temp_bans (usado por /api/hwid_bans/clear sin hwid)
+CREATE OR REPLACE FUNCTION truncate_hwid_bans()
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+    TRUNCATE TABLE hwid_temp_bans;
+END;
+$$;
+
+-- Trunca hwid_fail_log (usado junto con truncate_hwid_bans)
+CREATE OR REPLACE FUNCTION truncate_hwid_fail_log()
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+    TRUNCATE TABLE hwid_fail_log;
+END;
+$$;
+
+-- Limpia entradas antiguas de rate_limit_log (ventana = 60 s por defecto)
+-- Llama a esta función desde un cron job cada minuto para mantener
+-- la tabla pequeña y las consultas rápidas.
+CREATE OR REPLACE FUNCTION purge_old_rate_limit_log(window_secs DOUBLE PRECISION DEFAULT 60)
+RETURNS INT LANGUAGE plpgsql AS $$
+DECLARE
+    deleted INT;
+BEGIN
+    DELETE FROM rate_limit_log
+    WHERE ts < (EXTRACT(EPOCH FROM NOW()) - window_secs);
+    GET DIAGNOSTICS deleted = ROW_COUNT;
+    RETURN deleted;
+END;
+$$;
+
+-- Limpia entradas antiguas de hwid_fail_log (ventana = 600 s por defecto)
+CREATE OR REPLACE FUNCTION purge_old_hwid_fail_log(window_secs DOUBLE PRECISION DEFAULT 600)
+RETURNS INT LANGUAGE plpgsql AS $$
+DECLARE
+    deleted INT;
+BEGIN
+    DELETE FROM hwid_fail_log
+    WHERE ts < (EXTRACT(EPOCH FROM NOW()) - window_secs);
+    GET DIAGNOSTICS deleted = ROW_COUNT;
+    RETURN deleted;
+END;
+$$;
+
+
+-- ══════════════════════════════════════════════════════════════════
+-- CRON JOBS RECOMENDADOS (requiere pg_cron)
+-- Supabase Dashboard → Database → Extensions → pg_cron
+-- ══════════════════════════════════════════════════════════════════
+
+-- Limpia rate_limit_log cada minuto (tabla de alta frecuencia de escritura)
+-- SELECT cron.schedule('purge-rate-limit', '* * * * *', 'SELECT purge_old_rate_limit_log()');
+
+-- Limpia hwid_fail_log cada 15 minutos
+-- SELECT cron.schedule('purge-hwid-fails', '*/15 * * * *', 'SELECT purge_old_hwid_fail_log()');
+
+-- Los cron jobs del schema original siguen siendo válidos y recomendados:
+-- SELECT cron.schedule('purge-heartbeats', '*/10 * * * *', 'SELECT purge_old_heartbeats()');
+-- SELECT cron.schedule('purge-bans',       '0 * * * *',   'SELECT purge_expired_bans()');
+-- SELECT cron.schedule('trim-failed-log',  '0 3 * * *',   'SELECT trim_failed_log(500)');
