@@ -101,7 +101,7 @@ def handle_500(e): return jsonify({"error": "Error interno del servidor. Contact
 # -- Proxy/VPN block -------------------------------------------------
 
 _PROXY_HEADERS = {
-    "Via", "Forwarded", "X-Proxy-ID", "Proxy-Connection",
+    "X-Proxy-ID", "Proxy-Connection",
     "X-ProxyUser-Ip", "Proxy-Authenticate", "Proxy-Authorization",
 }
 
