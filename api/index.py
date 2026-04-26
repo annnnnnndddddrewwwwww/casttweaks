@@ -468,7 +468,7 @@ def _version_tuple(v: str) -> tuple:
 
 LICENSE_TYPES = ["Basic", "Pro", "Lifetime"]
 RESPONSE_TS_TOLERANCE = 30
-REQUEST_TS_TOLERANCE = 30
+REQUEST_TS_TOLERANCE = 120
 HEARTBEAT_WINDOW = 360
 HEARTBEAT_BAN_MSG = (
     "Account Sharing detectado: licencia usada desde multiples IPs simultaneamente."
