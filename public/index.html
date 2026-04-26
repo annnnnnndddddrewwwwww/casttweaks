@@ -1425,11 +1425,10 @@ async function applyDiscount() {
   msg.style.color = '#888'; msg.textContent = 'Validando...';
   try {
     const plan = activePlan || '';
-    const { ts, sig } = await _hmacSign([code, plan]);
     const r = await fetch(RENDER_URL + '/api/discount_codes/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, plan, ts, sig })
+      body: JSON.stringify({ code, plan })
     });
     const d = await r.json();
     if (d.valid) {

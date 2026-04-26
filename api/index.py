@@ -1181,14 +1181,6 @@ def toggle_discount_code():
 def validate_discount_code():
     data = request.get_json(silent=True) or {}
 
-    ok, err = _check_replay(data, use_secure=False)
-    if not ok:
-        resp, status = err
-        return resp, status
-
-    if not _verify_request_hmac(data, ["code", "plan"]):
-        return jsonify({"valid": False, "message": "Firma de peticion invalida (sig)."}), 401
-
     code = (data.get("code") or "").strip().upper()
     plan = (data.get("plan") or "").strip().lower()
 
