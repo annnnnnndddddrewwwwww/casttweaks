@@ -1178,7 +1178,6 @@ def toggle_discount_code():
     return jsonify({"ok": True, "active": new_state})
 
 @app.route("/api/discount_codes/validate", methods=["POST"])
-@block_proxy
 def validate_discount_code():
     data = request.get_json(silent=True) or {}
 
