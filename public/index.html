@@ -328,6 +328,14 @@
  .ct-page--hidden {
  display: none !important;
  }
+ /* Prevent GSAP from leaving opacity:0 on elements inside hidden pages */
+ .ct-page--hidden .gsap-reveal,
+ .ct-page--hidden .gsap-feat,
+ .ct-page--hidden .gsap-plan,
+ .ct-page--hidden .gsap-faq {
+ opacity: 1 !important;
+ transform: none !important;
+ }
  @keyframes ct-page-in {
  from { opacity: 0; transform: translateY(14px); }
  to { opacity: 1; transform: translateY(0); }
@@ -1924,7 +1932,6 @@
  
 <button class="btn btn-outline btn-full" onclick="openBuy('basic')">Comprar Basic →</button>
  </div>
- ```
 
 <div class="plan-card pc-pro gsap-plan">
  
@@ -1998,8 +2005,6 @@
 <button class="btn btn-orange btn-full" onclick="openBuy('lifetime')">Comprar Lifetime →</button>
 
 </div>
- ```
- </div>
 
 </section>
 </div><!-- /page-pricing -->
@@ -2009,7 +2014,6 @@
  <div style="max-width:860px;margin:0 auto;">
  <div class="section-eyebrow gsap-reveal">Preguntas frecuentes</div>
  <h2 class="section-title gsap-reveal" style="margin-bottom:48px">FAQ</h2>
- ```
 
 <div class="faq-item gsap-faq">
  <div class="faq-q" onclick="toggleFaq(this)">
@@ -2055,7 +2059,6 @@
  <div class="faq-a">Sí, CastTweaks incluye un botón de restauración que revierte todos los cambios al estado original de tu sistema con un solo clic.</div>
 
 </div>
- ```
  </div>
 
 </section>
@@ -2285,7 +2288,6 @@
  </div>
  <div class="m-title">Completar compra</div>
  <div class="m-sub">Introduce tus datos para recibir la clave de licencia tras el pago.</div>
- ```
 
 <div id="s-form">
  <div class="order-box">
@@ -2349,7 +2351,6 @@
  </div>
 
 </div>
- ```
  </div>
 
 </div>
@@ -3081,7 +3082,8 @@
    var plans   = target.querySelectorAll('.gsap-plan');
    var faqs    = target.querySelectorAll('.gsap-faq');
    var all = Array.from(reveals).concat(Array.from(feats)).concat(Array.from(plans)).concat(Array.from(faqs));
-   all.forEach(function(el) { gsap.killTweensOf(el); });
+   /* Kill tweens and wipe ALL inline styles GSAP may have set while the page was hidden */
+   all.forEach(function(el) { gsap.killTweensOf(el); gsap.set(el, { clearProps: 'all' }); });
    if (reveals.length) gsap.fromTo(reveals, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08, clearProps: 'transform' });
    if (feats.length)   gsap.fromTo(feats,   { y: 40, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power3.out', stagger: 0.07, clearProps: 'transform,scale' });
    if (plans.length)   gsap.fromTo(plans,   { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: 0.12, clearProps: 'transform' });
