@@ -1958,11 +1958,13 @@
         });
       }
 
-      /* 5. Navegar a la página del hash si existe en pages.html */
+      /* 5. Navegar según el hash ahora que pages.html ya está en el DOM.
+            Cubre todas las secciones (incluyendo hero) para que showPage()
+            encuentre siempre los elementos antes de mostrarlos/ocultarlos. */
       var hash = window.location.hash.replace('#', '');
-      if (hash && ['features','pricing','faq','resenas'].indexOf(hash) !== -1) {
-        if (typeof showPage === 'function') showPage(hash);
-      }
+      var validSections = ['hero','features','pricing','faq','resenas'];
+      var targetSection = (hash && validSections.indexOf(hash) !== -1) ? hash : 'hero';
+      if (typeof showPage === 'function') showPage(targetSection);
     })
     .catch(function(err) {
       console.error('[CastTweaks] Error cargando pages.html:', err);
@@ -2811,11 +2813,8 @@ document.getElementById('float-nav').addEventListener('click', function(e) {
   showPage(section);
 });
 
-/* On load: show page from hash or default to hero */
-window.addEventListener('load', function() {
-  var hash = window.location.hash.replace('#', '');
-  showPage((hash && PAGE_MAP[hash]) ? hash : 'hero');
-});
+/* showPage() se llama desde el .then() del fetch de pages.html,
+   una vez que todos los elementos ya están en el DOM. */
 </script>
 
 
