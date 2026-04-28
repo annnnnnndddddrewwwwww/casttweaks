@@ -323,18 +323,21 @@
  /* ═══════════════════════════════ PAGE / TAB SYSTEM ═══════════════════════════════ */
  .ct-page {
  display: block;
+ min-height: 100vh;
  animation: ct-page-in 0.35s var(--ease) both;
  }
  .ct-page--hidden {
  display: none !important;
  }
- /* Prevent GSAP from leaving opacity:0 on elements inside hidden pages */
- .ct-page--hidden .gsap-reveal,
- .ct-page--hidden .gsap-feat,
- .ct-page--hidden .gsap-plan,
- .ct-page--hidden .gsap-faq {
- opacity: 1 !important;
- transform: none !important;
+ /* Safety net: visible pages always show their content.
+    GSAP inline styles override this, but showPage() runs clearProps:'all'
+    to strip them before animating in. */
+ .ct-page:not(.ct-page--hidden) .gsap-reveal,
+ .ct-page:not(.ct-page--hidden) .gsap-feat,
+ .ct-page:not(.ct-page--hidden) .gsap-plan,
+ .ct-page:not(.ct-page--hidden) .gsap-faq {
+ opacity: 1;
+ transform: none;
  }
  @keyframes ct-page-in {
  from { opacity: 0; transform: translateY(14px); }
@@ -1840,429 +1843,132 @@
 
 </div><!-- /page-hero -->
 
-<div class="ct-page ct-page--hidden" id="page-features">
-<section id="features">
- <div class="features-header">
- <div class="section-eyebrow gsap-reveal">Características</div>
- <h2 class="section-title gsap-reveal">Todo lo que necesitas<br><span style="background:linear-gradient(135deg,var(--purple),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent">en una app</span></h2>
- <p class="section-desc gsap-reveal">Optimizaciones probadas. Sin bloatware. Sin sorpresas. Solo rendimiento puro.</p>
- </div>
- <div class="features-grid" id="feat-grid">
- <div class="feat-item gsap-feat">
- <div class="feat-number">01</div>
- <div class="feat-icon-wrap"><svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><path d="M13 3 C17 3 20 7 20 11 L20 16 L16 19 L10 19 L6 16 L6 11 C6 7 9 3 13 3Z"/><line x1="10" y1="19" x2="8" y2="23" stroke-opacity=".5"/><line x1="16" y1="19" x2="18" y2="23" stroke-opacity=".5"/><path d="M10 22 Q13 26 16 22" stroke="var(--orange)" stroke-opacity=".85"/><circle cx="13" cy="11" r="2.5" fill="rgba(224,64,251,.2)"/><line x1="2" y1="9" x2="6" y2="11" stroke-opacity=".35"/><line x1="2" y1="13" x2="6" y2="13" stroke-opacity=".2"/></svg></div>
- <div class="feat-title">Boost de FPS</div>
- <p class="feat-desc">Tweaks avanzados del sistema para maximizar frames en cualquier juego sin sacrificar estabilidad.</p>
- </div>
- <div class="feat-item gsap-feat">
- <div class="feat-number">02</div>
- <div class="feat-icon-wrap"><svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><polyline points="15,2 9,14 14,14 11,24 19,10 13,10 15,2"/><path d="M4 13 Q4 8 7 5" stroke-opacity=".35"/><path d="M22 13 Q22 8 19 5" stroke-opacity=".35"/></svg></div>
- <div class="feat-title">Latencia cero</div>
- <p class="feat-desc">Ajustes de red y kernel que reducen el ping y eliminan el stuttering completamente.</p>
- </div>
- <div class="feat-item gsap-feat">
- <div class="feat-number">03</div>
- <div class="feat-icon-wrap"><svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><path d="M16 4 C19.3 4 22 6.7 22 10 C22 11.6 21.4 13 20.4 14.1 L8 22 L4 22 L4 18 L11.9 5.6 C13 4.6 14.4 4 16 4Z"/><circle cx="16" cy="10" r="2.2"/><line x1="4" y1="22" x2="8" y2="22"/><path d="M4 18 L4 22 L8 22 L8 18 Z" stroke-opacity=".4"/></svg></div>
- <div class="feat-title">50+ Tweaks</div>
- <p class="feat-desc">Windows, GPU, CPU y RAM optimizados con un solo clic. Configuración automática para tu hardware.</p>
- </div>
- <div class="feat-item gsap-feat">
- <div class="feat-number">04</div>
- <div class="feat-icon-wrap"><svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><path d="M13 2 L21 5.5 L21 12 C21 17.5 17.5 21.5 13 24 C8.5 21.5 5 17.5 5 12 L5 5.5 Z"/><polyline points="9,13 12,16 18,9"/></svg></div>
- <div class="feat-title">Anti-cheat safe</div>
- <p class="feat-desc">100% seguro con EAC, BattleEye y Vanguard. No modifica archivos de juego bajo ningún concepto.</p>
- </div>
- <div class="feat-item gsap-feat">
- <div class="feat-number">05</div>
- <div class="feat-icon-wrap"><svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="22" height="15" rx="2"/><polyline points="4,15 7,15 9,8 12,17 15,11 17,15 22,15" stroke="var(--magenta)"/><line x1="9" y1="19" x2="9" y2="22"/><line x1="17" y1="19" x2="17" y2="22"/><line x1="7" y1="22" x2="19" y2="22"/></svg></div>
- <div class="feat-title">Monitor en vivo</div>
- <p class="feat-desc">Dashboard con métricas de CPU, GPU, RAM y temperatura actualizadas en tiempo real.</p>
- </div>
- <div class="feat-item gsap-feat">
- <div class="feat-number">06</div>
- <div class="feat-icon-wrap"><svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg"><path d="M20 8 A9 9 0 0 1 21 13 A9 9 0 0 1 6 19.5"/><polyline points="20,4 20,8 16,8"/><path d="M6 18 A9 9 0 0 1 5 13 A9 9 0 0 1 20 6.5"/><polyline points="6,22 6,18 10,18"/><circle cx="13" cy="13" r="2" fill="rgba(224,64,251,.2)"/></svg></div>
- <div class="feat-title">Auto-updates</div>
- <p class="feat-desc">Siempre la última versión con los tweaks más recientes. Cero intervención manual.</p>
- </div>
- </div>
+<!-- ═══ PÁGINAS EXTERNAS: cargadas desde pages.html ═══ -->
+<div id="external-pages"></div>
 
-</section>
-</div><!-- /page-features -->
+<script>
+/* Carga pages.html e inyecta su contenido en #external-pages.
+   Una vez inyectado, inicializa los scripts que dependen de esos elementos. */
+(function loadPages() {
+  fetch('pages.html')
+    .then(function(r) {
+      if (!r.ok) throw new Error('No se pudo cargar pages.html: ' + r.status);
+      return r.text();
+    })
+    .then(function(html) {
+      document.getElementById('external-pages').innerHTML = html;
 
-<div class="ct-page ct-page--hidden" id="page-pricing">
-<section id="pricing">
- <div class="pricing-hdr">
- <div class="section-eyebrow gsap-reveal">Planes y precios</div>
- <h2 class="section-title gsap-reveal">Elige tu plan</h2>
- <p class="section-desc gsap-reveal" style="margin:0 auto">Pago único con PayPal. Sin suscripciones ni cargos ocultos.</p>
- </div>
- <div class="plans-grid">
- <div class="plan-card pc-basic gsap-plan">
- <div class="plan-name-row">
- <div class="plan-dot"></div>
- <div class="plan-name">Basic</div>
- </div>
- <div class="plan-price-area">
- <div class="plan-price"><span class="price-eur">€</span><span id="pn-basic">5</span><span class="price-dec">.<span id="pd-basic">00</span></span></div>
- <div class="plan-price-note">pago único · <span id="px-basic">30 días incluidos</span></div>
- </div>
- <div class="day-config">
- <div class="day-row"><span class="day-lbl">Duración</span><span class="day-val" id="dv-basic">30 días</span></div>
- <input type="range" id="sl-basic" min="30" max="365" step="30" value="30" oninput="upd('basic',this.value)">
- <div class="day-presets">
- <button class="dpr on" onclick="sd('basic',30)">30d</button>
- <button class="dpr" onclick="sd('basic',90)">90d</button>
- <button class="dpr" onclick="sd('basic',180)">6m</button>
- <button class="dpr" onclick="sd('basic',365)">1 año</button>
- </div>
- <div class="day-total"><span>Total</span><span class="day-total-num" id="tot-basic">€5.00</span></div>
- </div>
- <ul class="plan-feats">
- 
-<li><span class="fcheck">✓</span>Optimizaciones esenciales</li>
- 
-<li><span class="fcheck">✓</span>Boost de FPS básico</li>
- 
-<li><span class="fcheck">✓</span>Tweaks de red</li>
- 
-<li><span class="fcheck">✓</span>1 dispositivo</li>
- 
-<li><span class="fcheck">✓</span>Actualizaciones incluidas</li>
- </ul>
- 
-<button class="btn btn-outline btn-full" onclick="openBuy('basic')">Comprar Basic →</button>
- </div>
+      /* ── Re-inicializar scripts que dependen del DOM de pages.html ── */
 
-<div class="plan-card pc-pro gsap-plan">
- 
-<div class="plan-badge-wrap"><span class="plan-hot">⭐ Popular</span></div>
- <div class="plan-name-row">
- <div class="plan-dot"></div>
- <div class="plan-name">Pro</div>
- </div>
- <div class="plan-price-area">
- <div class="plan-price"><span class="price-eur">€</span><span id="pn-pro">10</span><span class="price-dec">.<span id="pd-pro">00</span></span></div>
- <div class="plan-price-note">pago único · <span id="px-pro">30 días incluidos</span></div>
- </div>
- <div class="day-config">
- <div class="day-row"><span class="day-lbl">Duración</span><span class="day-val" id="dv-pro">30 días</span></div>
- <input type="range" id="sl-pro" min="30" max="365" step="30" value="30" oninput="upd('pro',this.value)">
- <div class="day-presets">
- <button class="dpr on" onclick="sd('pro',30)">30d</button>
- <button class="dpr" onclick="sd('pro',90)">90d</button>
- <button class="dpr" onclick="sd('pro',180)">6m</button>
- <button class="dpr" onclick="sd('pro',365)">1 año</button>
- </div>
- <div class="day-total"><span>Total</span><span class="day-total-num" id="tot-pro">€10.00</span></div>
- </div>
- <ul class="plan-feats">
- 
-<li><span class="fcheck">✓</span>Todo lo de Basic</li>
- 
-<li><span class="fcheck">✓</span>Tweaks avanzados de GPU</li>
- 
-<li><span class="fcheck">✓</span>Monitor en tiempo real</li>
- 
-<li><span class="fcheck">✓</span>3 dispositivos</li>
- 
-<li><span class="fcheck">✓</span>Soporte prioritario</li>
- </ul>
- 
-<button class="btn btn-primary btn-full" onclick="openBuy('pro')">Comprar Pro →</button>
+      /* 1. Marquee de reseñas */
+      var REVIEWS_LANE1 = [
+        { text: "¡FPS por las nubes! No volvería atrás.", author: "Ruben_FPS", game: "Valorant", color: "purple", init: "R" },
+        { text: "200 → 340 FPS en CS2. Simplemente increíble.", author: "XdarkSh0t", game: "CS2", color: "cyan", init: "X" },
+        { text: "El mejor dinero que he gastado en gaming.", author: "ProGamer99", game: "Fortnite", color: "pink", init: "P" },
+        { text: "Cero lag, cero stutters. Perfecto.", author: "LauraGames", game: "Apex", color: "green", init: "L" },
+        { text: "Mi PC viejo rinde como si fuera nuevo.", author: "MiguelTech", game: "LoL", color: "purple", init: "M" },
+        { text: "Stream sin drops por primera vez 🎉", author: "StreamQueen", game: "Twitch", color: "pink", init: "S" },
+        { text: "Input lag mínimo, mis reacciones mejoraron.", author: "Zer0Delay", game: "Valorant", color: "cyan", init: "Z" },
+        { text: "Instalé en 10 min y ya notaba la diferencia.", author: "QuickSetup", game: "CS2", color: "green", init: "Q" },
+        { text: "Anti-cheat safe 100%, probado en torneo.", author: "TourneyAce", game: "Fortnite", color: "purple", init: "T" },
+        { text: "Mi GPU se calienta menos. Sorprendente.", author: "CoolSystem", game: "Warzone", color: "cyan", init: "C" },
+        { text: "De 90 FPS inestables a 180 estables. WOW.", author: "NightFrag", game: "Apex", color: "pink", init: "N" },
+        { text: "Soporte técnico respondió en minutos.", author: "HappyUser", game: "LoL", color: "green", init: "H" },
+      ];
+      var REVIEWS_LANE2 = [
+        { text: "Jamás pensé que el software hiciera tanto.", author: "SkepticalG", game: "CS2", color: "cyan", init: "S" },
+        { text: "Temps bajaron 15°C. La diferencia se nota.", author: "CoolFPS", game: "Warzone", color: "green", init: "C" },
+        { text: "El restore funciona de maravilla si hay dudas.", author: "SafeGamer", game: "Valorant", color: "purple", init: "S" },
+        { text: "Mi Intel i5 rinde como un i7 ahora.", author: "CPUWizard", game: "Apex", color: "pink", init: "C" },
+        { text: "240 FPS constantes. Nunca tan suave.", author: "SilkySmooth", game: "CS2", color: "cyan", init: "S" },
+        { text: "Recomendado por mi equipo completo.", author: "TeamCaptain", game: "Valorant", color: "purple", init: "T" },
+        { text: "Sin microfreezes desde que lo instalé.", author: "NoFreeze_X", game: "Fortnite", color: "green", init: "N" },
+        { text: "Precio justo por lo que ofrece. 10/10.", author: "ValueGamer", game: "LoL", color: "pink", init: "V" },
+        { text: "Activé el plan pro y fue un antes y después.", author: "ProUpgrade", game: "Warzone", color: "cyan", init: "P" },
+        { text: "FPS estables durante 5h de sesión. 🔥", author: "SessionKing", game: "Apex", color: "purple", init: "S" },
+        { text: "RAM optimizada, todo va más fluido.", author: "RAMmaster", game: "CS2", color: "green", init: "R" },
+        { text: "Lo usé el día del torneo y gané. ¡Gracias!", author: "WinnerGG", game: "Valorant", color: "pink", init: "W" },
+      ];
+      function buildReviewCard(r) {
+        return '<div class="rmc rmc--' + r.color + '">'
+          + '<div class="rmc-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>'
+          + '<div class="rmc-text">"' + r.text + '"</div>'
+          + '<div class="rmc-author">'
+          + '<div class="rmc-avatar rmc--' + r.color + '" style="background:rgba(155,48,255,0.12)">' + r.init + '</div>'
+          + '<div><div class="rmc-name">' + r.author + '</div><div class="rmc-game">' + r.game + '</div></div>'
+          + '</div></div>';
+      }
+      function populateLane(id, data) {
+        var lane = document.getElementById(id);
+        if (!lane) return;
+        var doubled = data.concat(data);
+        lane.innerHTML = doubled.map(buildReviewCard).join('');
+      }
+      populateLane('rml-1', REVIEWS_LANE1);
+      populateLane('rml-2', REVIEWS_LANE2);
 
-</div>
+      /* 2. Acordeón de testimonios */
+      document.querySelectorAll('[data-testi]').forEach(function(item) {
+        var header = item.querySelector('.testi-header');
+        if (!header) return;
+        header.addEventListener('click', function() {
+          var isOpen = item.classList.contains('t-open');
+          document.querySelectorAll('[data-testi]').forEach(function(i) { i.classList.remove('t-open'); });
+          if (!isOpen) item.classList.add('t-open');
+        });
+      });
 
-<div class="plan-card pc-life gsap-plan">
- <div class="plan-name-row">
- <div class="plan-dot"></div>
- <div class="plan-name">Lifetime</div>
- </div>
- <div class="plan-price-area">
- <div class="plan-price"><span class="price-eur">€</span><span id="pn-life">39</span><span class="price-dec">.<span id="pd-life">99</span></span></div>
- 
-<div class="plan-price-note">pago único · <span id="px-life">∞ Para siempre</span></div>
- </div>
- <div class="day-config">
- 
-<div class="day-row"><span class="day-lbl">Duración</span><span class="day-val" style="color:var(--orange)">∞ Lifetime</span></div>
- 
-<div style="text-align:center;padding:16px 0;font-family:var(--display);font-size:28px;color:var(--orange)">∞</div>
- <div class="day-total"><span>Total</span><span class="day-total-num" id="tot-life" style="color:var(--orange)">€39.99</span></div>
- </div>
- <ul class="plan-feats">
- 
-<li><span class="fcheck">✓</span>Todo lo de Pro</li>
- 
-<li><span class="fcheck">✓</span>Acceso de por vida</li>
- 
-<li><span class="fcheck">✓</span>Updates futuras incluidas</li>
- 
-<li><span class="fcheck">✓</span>5 dispositivos</li>
- 
-<li><span class="fcheck">✓</span>Discord VIP</li>
- </ul>
- 
-<button class="btn btn-orange btn-full" onclick="openBuy('lifetime')">Comprar Lifetime →</button>
+      /* 3. Barras de puntuación */
+      var summaryBox = document.getElementById('reviews-summary-box');
+      if (summaryBox) {
+        var obs = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              entry.target.querySelectorAll('.rs-bar-fill').forEach(function(bar) {
+                bar.style.width = bar.dataset.pct + '%';
+              });
+              obs.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.3 });
+        obs.observe(summaryBox);
+      }
 
-</div>
+      /* 4. GSAP hover en iconos de features (si GSAP ya cargó) */
+      if (typeof gsap !== 'undefined') {
+        document.querySelectorAll('.feat-icon-wrap').forEach(function(icon) {
+          icon.parentElement.addEventListener('mouseenter', function() {
+            gsap.to(icon, { rotation: 15, scale: 1.15, duration: 0.35, ease: 'power2.out' });
+          });
+          icon.parentElement.addEventListener('mouseleave', function() {
+            gsap.to(icon, { rotation: 0, scale: 1, duration: 0.5, ease: 'elastic.out(1, 0.7)' });
+          });
+        });
+        /* Plan card tilt hover */
+        document.querySelectorAll('.plan-card').forEach(function(card) {
+          card.addEventListener('mousemove', function(e) {
+            var rect = card.getBoundingClientRect();
+            var nx = (e.clientX - rect.left) / rect.width - 0.5;
+            var ny = (e.clientY - rect.top) / rect.height - 0.5;
+            gsap.to(card, { rotateY: nx * 6, rotateX: -ny * 4, duration: 0.4, ease: 'power2.out', transformPerspective: 800 });
+          });
+          card.addEventListener('mouseleave', function() {
+            gsap.to(card, { rotateY: 0, rotateX: 0, duration: 0.6, ease: 'elastic.out(1, 0.7)' });
+          });
+        });
+      }
 
-</section>
-</div><!-- /page-pricing -->
-
-<div class="ct-page ct-page--hidden" id="page-faq">
-<section id="faq" style="padding:110px 5vw;">
- <div style="max-width:860px;margin:0 auto;">
- <div class="section-eyebrow gsap-reveal">Preguntas frecuentes</div>
- <h2 class="section-title gsap-reveal" style="margin-bottom:48px">FAQ</h2>
-
-<div class="faq-item gsap-faq">
- <div class="faq-q" onclick="toggleFaq(this)">
- ¿Es compatible con todos los juegos?
- <div class="faq-arr">+</div>
- </div>
- <div class="faq-a">CastTweaks funciona a nivel de sistema operativo, por lo que es compatible con todos los juegos de Windows. Optimiza la prioridad de CPU, memoria, red y GPU de forma global.</div>
-
-</div>
-
-<div class="faq-item gsap-faq">
- <div class="faq-q" onclick="toggleFaq(this)">
- ¿Cuánto tiempo tarda la activación?
- <div class="faq-arr">+</div>
- </div>
- <div class="faq-a">La licencia se genera automáticamente tras el pago. Recibirás tu clave en menos de 2 minutos directamente en la pantalla de compra y por email.</div>
-
-</div>
-
-<div class="faq-item gsap-faq">
- <div class="faq-q" onclick="toggleFaq(this)">
- ¿Puedo usar la licencia en varios PCs?
- <div class="faq-arr">+</div>
- </div>
- <div class="faq-a">Depende del plan. Basic permite 1 dispositivo, Pro permite 3 y Lifetime permite 5 dispositivos simultáneos con la misma licencia.</div>
-
-</div>
-
-<div class="faq-item gsap-faq">
- <div class="faq-q" onclick="toggleFaq(this)">
- ¿Hay riesgo de ban en juegos competitivos?
- <div class="faq-arr">+</div>
- </div>
- <div class="faq-a">No. CastTweaks solo modifica configuraciones del sistema operativo y no toca archivos de juego. Es 100% compatible con EAC, BattleEye, Vanguard y cualquier anti-cheat.</div>
-
-</div>
-
-<div class="faq-item gsap-faq">
- <div class="faq-q" onclick="toggleFaq(this)">
- ¿Puedo revertir los cambios?
- <div class="faq-arr">+</div>
- </div>
- <div class="faq-a">Sí, CastTweaks incluye un botón de restauración que revierte todos los cambios al estado original de tu sistema con un solo clic.</div>
-
-</div>
- </div>
-
-</section>
-</div><!-- /page-faq -->
-
-<div class="ct-page ct-page--hidden" id="page-resenas">
-<!-- ═══════════════════════════════════════════════════════════
- SECCIÓN 1: MARQUEE DE RESEÑAS — cinta infinita
-════════════════════════════════════════════════════════════ -->
-<section id="reviews-marquee">
- <div class="reviews-marquee-hdr">
- <div class="section-eyebrow">⭐ opiniones reales</div>
- <h2 class="section-title">Lo que dicen los gamers</h2>
- </div>
-
- <!-- Lane 1: izquierda → derecha -->
- <div style="overflow:hidden; margin-bottom:16px;">
- <div class="rmarquee-lane rmarquee-lane--fwd" id="rml-1"></div>
- </div>
- <!-- Lane 2: derecha → izquierda -->
- <div style="overflow:hidden;">
- <div class="rmarquee-lane rmarquee-lane--rev" id="rml-2"></div>
- </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════
- SECCIÓN 2: TESTIMONIOS ACORDEÓN
-════════════════════════════════════════════════════════════ -->
-<section id="reviews-testimonials">
- <div class="testimonials-hdr">
- <div class="section-eyebrow">💬 testimonios verificados</div>
- <h2 class="section-title">Historias de éxito</h2>
- <p class="section-desc">Más de 12.400 usuarios confían en CastTweaks® para llevar su setup al límite.</p>
- </div>
-
- <!-- Resumen de puntuaciones -->
- <div class="reviews-summary" id="reviews-summary-box">
- <div class="rs-score">
- <div class="rs-num">4.9</div>
- <div class="rs-stars">
- <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
- </div>
- <div class="rs-count">+12.400 RESEÑAS</div>
- </div>
- <div class="rs-bars">
- <div class="rs-bar-row">
- <span class="rs-bar-lbl">5 ★</span>
- <div class="rs-bar-track"><div class="rs-bar-fill" data-pct="92"></div></div>
- <span class="rs-bar-pct">92%</span>
- </div>
- <div class="rs-bar-row">
- <span class="rs-bar-lbl">4 ★</span>
- <div class="rs-bar-track"><div class="rs-bar-fill" data-pct="6"></div></div>
- <span class="rs-bar-pct">6%</span>
- </div>
- <div class="rs-bar-row">
- <span class="rs-bar-lbl">3 ★</span>
- <div class="rs-bar-track"><div class="rs-bar-fill" data-pct="1"></div></div>
- <span class="rs-bar-pct">1%</span>
- </div>
- <div class="rs-bar-row">
- <span class="rs-bar-lbl">2 ★</span>
- <div class="rs-bar-track"><div class="rs-bar-fill" data-pct="0.5"></div></div>
- <span class="rs-bar-pct">0.5%</span>
- </div>
- <div class="rs-bar-row">
- <span class="rs-bar-lbl">1 ★</span>
- <div class="rs-bar-track"><div class="rs-bar-fill" data-pct="0.5"></div></div>
- <span class="rs-bar-pct">0.5%</span>
- </div>
- </div>
- </div>
-
- <!-- Acordeón de testimonios -->
- <div id="testimonials-accordion">
-
- <div class="testi-item t-open" data-testi>
- <div class="testi-header">
- <div class="testi-avatar-lg av--purple">A</div>
- <div class="testi-meta">
- <div class="testi-name">Alejandro R.</div>
- <div class="testi-tagline">Competitivo · Valorant &amp; CS2 · Madrid</div>
- <div class="testi-stars-row">
- <span>★★★★★</span>
- <span class="testi-verified">✓ Compra verificada</span>
- </div>
- </div>
- <div class="testi-toggle">+</div>
- </div>
- <div class="testi-body">
- <div class="testi-quote">
- Llevaba meses con drops de FPS en los clutch más importantes. Un amigo me recomendó CastTweaks® y literalmente al día siguiente mis partidas cambiaron por completo. Pasé de 180 FPS inestables a 240 FPS sostenidos sin tocar ni una pieza de hardware. El resultado fue brutal e inmediato.
- </div>
- <div class="testi-stats">
- <div class="tstat"><span class="tstat-icon">🎮</span><strong>+60 FPS</strong> de media</div>
- <div class="tstat"><span class="tstat-icon">⚡</span>Input lag <strong>-38%</strong></div>
- <div class="tstat"><span class="tstat-icon">📅</span>Usuario desde <strong>hace 8 meses</strong></div>
- </div>
- </div>
- </div>
-
- <div class="testi-item" data-testi>
- <div class="testi-header">
- <div class="testi-avatar-lg av--cyan">S</div>
- <div class="testi-meta">
- <div class="testi-name">Sara M.</div>
- <div class="testi-tagline">Streamer · Twitch Partner · Barcelona</div>
- <div class="testi-stars-row">
- <span>★★★★★</span>
- <span class="testi-verified">✓ Compra verificada</span>
- </div>
- </div>
- <div class="testi-toggle">+</div>
- </div>
- <div class="testi-body">
- <div class="testi-quote">
- Hacer stream mientras juego siempre me había penalizado mucho. Con CastTweaks® el encoding del OBS va perfectamente fluido y en el juego no noto ninguna diferencia respecto a jugar sin stream. Mis viewers también notaron el salto en calidad de imagen porque el CPU ya no está al 95%.
- </div>
- <div class="testi-stats">
- <div class="tstat"><span class="tstat-icon">📡</span>CPU stream <strong>-22%</strong></div>
- <div class="tstat"><span class="tstat-icon">🎬</span>Drops en directo <strong>0</strong></div>
- <div class="tstat"><span class="tstat-icon">📅</span>Usuario desde <strong>hace 1 año</strong></div>
- </div>
- </div>
- </div>
-
- <div class="testi-item" data-testi>
- <div class="testi-header">
- <div class="testi-avatar-lg av--pink">D</div>
- <div class="testi-meta">
- <div class="testi-name">Diego F.</div>
- <div class="testi-tagline">Pro Player · Fortnite · Sevilla</div>
- <div class="testi-stars-row">
- <span>★★★★★</span>
- <span class="testi-verified">✓ Compra verificada</span>
- </div>
- </div>
- <div class="testi-toggle">+</div>
- </div>
- <div class="testi-body">
- <div class="testi-quote">
- Lo que más me preocupaba era el anti-cheat de Fortnite. Investigué mucho antes de comprar y no solo es 100% seguro sino que el soporte me confirmó todo antes de proceder. El tweak de prioridades de proceso es una locura, mi PC responde de manera diferente en combate, más consistente y predecible.
- </div>
- <div class="testi-stats">
- <div class="tstat"><span class="tstat-icon">🛡️</span>Anti-cheat <strong>Safe</strong></div>
- <div class="tstat"><span class="tstat-icon">🎯</span>Consistencia FPS <strong>+91%</strong></div>
- <div class="tstat"><span class="tstat-icon">📅</span>Usuario desde <strong>hace 6 meses</strong></div>
- </div>
- </div>
- </div>
-
- <div class="testi-item" data-testi>
- <div class="testi-header">
- <div class="testi-avatar-lg av--green">K</div>
- <div class="testi-meta">
- <div class="testi-name">Kirra L.</div>
- <div class="testi-tagline">FPS Enjoyer · Apex Legends · Valencia</div>
- <div class="testi-stars-row">
- <span>★★★★★</span>
- <span class="testi-verified">✓ Compra verificada</span>
- </div>
- </div>
- <div class="testi-toggle">+</div>
- </div>
- <div class="testi-body">
- <div class="testi-quote">
- Sinceramente no esperaba tanto. Tenía un i5 de hace 4 años y pensaba que era el hardware el problema. CastTweaks® exprimió todo lo que quedaba en esa CPU y la mejora fue visible en las primeras partidas. Ahora puedo jugar en competitivo sin vergüenza y mi PC aguanta 3 horas de sesión sin thermal throttling.
- </div>
- <div class="testi-stats">
- <div class="tstat"><span class="tstat-icon">🌡️</span>Temperatura <strong>-12°C</strong></div>
- <div class="tstat"><span class="tstat-icon">⚡</span>Rendimiento CPU <strong>+41%</strong></div>
- <div class="tstat"><span class="tstat-icon">📅</span>Usuario desde <strong>hace 3 meses</strong></div>
- </div>
- </div>
- </div>
-
- <div class="testi-item" data-testi>
- <div class="testi-header">
- <div class="testi-avatar-lg av--orange">M</div>
- <div class="testi-meta">
- <div class="testi-name">Marcos V.</div>
- <div class="testi-tagline">Gamer Casual · League of Legends · Bilbao</div>
- <div class="testi-stars-row">
- <span>★★★★★</span>
- <span class="testi-verified">✓ Compra verificada</span>
- </div>
- </div>
- <div class="testi-toggle">+</div>
- </div>
- <div class="testi-body">
- <div class="testi-quote">
- No soy ningún experto técnico y me daba miedo hacer cambios en el sistema. Pero el instalador es tan sencillo que hasta mi madre podría usarlo. En 10 minutos todo estaba listo. Lo mejor es que si algo no te gusta, el botón de restaurar funciona a la perfección y vuelve todo como estaba.
- </div>
- <div class="testi-stats">
- <div class="tstat"><span class="tstat-icon">⏱️</span>Instalación en <strong>10 min</strong></div>
- <div class="tstat"><span class="tstat-icon">↩️</span>Restore <strong>1 clic</strong></div>
- <div class="tstat"><span class="tstat-icon">📅</span>Usuario desde <strong>hace 5 meses</strong></div>
- </div>
- </div>
- </div>
-
- </div><!-- /accordion -->
-</section>
-</div><!-- /page-resenas -->
+      /* 5. Navegar a la página del hash si existe en pages.html */
+      var hash = window.location.hash.replace('#', '');
+      if (hash && ['features','pricing','faq','resenas'].indexOf(hash) !== -1) {
+        if (typeof showPage === 'function') showPage(hash);
+      }
+    })
+    .catch(function(err) {
+      console.error('[CastTweaks] Error cargando pages.html:', err);
+    });
+})();
+</script>
 
 <footer>
  <div class="foot-logo">
@@ -3036,210 +2742,119 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   TAB / PAGE NAVIGATION SYSTEM
-   Maps each nav item to an exclusive content page.
-   Clicking a tab hides all pages and shows only the target.
+   TAB / PAGE NAVIGATION SYSTEM — rewritten fix
 ════════════════════════════════════════════════════════════ */
-(function() {
- /* Map: data-section value → page div id */
- var PAGE_MAP = {
- 'hero':     'page-hero',
- 'features': 'page-features',
- 'pricing':  'page-pricing',
- 'faq':      'page-faq',
- 'resenas':  'page-resenas'
- };
+var PAGE_MAP = {
+  'hero':     'page-hero',
+  'features': 'page-features',
+  'pricing':  'page-pricing',
+  'faq':      'page-faq',
+  'resenas':  'page-resenas'
+};
+var ALL_PAGE_IDS = ['page-hero','page-features','page-pricing','page-faq','page-resenas'];
+var _reviewsAnimated = false;
 
- var ALL_PAGES = Object.values(PAGE_MAP);
+function showPage(section) {
+  var targetId = PAGE_MAP[section];
+  if (!targetId) return;
 
- function showPage(section) {
- var targetId = PAGE_MAP[section];
- if (!targetId) return;
+  /* 1. Hide all pages */
+  ALL_PAGE_IDS.forEach(function(pid) {
+    var el = document.getElementById(pid);
+    if (el) el.classList.add('ct-page--hidden');
+  });
 
- /* Hide all pages */
- ALL_PAGES.forEach(function(pid) {
- var el = document.getElementById(pid);
- if (el) el.classList.add('ct-page--hidden');
- });
+  /* 2. Show target */
+  var target = document.getElementById(targetId);
+  if (!target) return;
+  target.classList.remove('ct-page--hidden');
 
- /* Show target with entrance animation */
- var target = document.getElementById(targetId);
- if (target) {
- target.classList.remove('ct-page--hidden');
- /* Re-trigger animation by toggling the class */
- target.style.animation = 'none';
- target.offsetHeight; /* force reflow */
- target.style.animation = '';
+  /* 3. Re-trigger CSS entrance animation */
+  target.style.animation = 'none';
+  target.offsetHeight;
+  target.style.animation = '';
 
- /* Fix GSAP: clear any inline styles set by ScrollTrigger during load
-    (elements were display:none so triggers never fired, leaving opacity:0).
-    Then animate them in directly — no ScrollTrigger needed since they're
-    already in the viewport after tab switch. */
- if (window.gsap) {
-  setTimeout(function() {
-   var reveals = target.querySelectorAll('.gsap-reveal');
-   var feats   = target.querySelectorAll('.gsap-feat');
-   var plans   = target.querySelectorAll('.gsap-plan');
-   var faqs    = target.querySelectorAll('.gsap-faq');
-   var all = Array.from(reveals).concat(Array.from(feats)).concat(Array.from(plans)).concat(Array.from(faqs));
-   /* Kill tweens and wipe ALL inline styles GSAP may have set while the page was hidden */
-   all.forEach(function(el) { gsap.killTweensOf(el); gsap.set(el, { clearProps: 'all' }); });
-   if (reveals.length) gsap.fromTo(reveals, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08, clearProps: 'transform' });
-   if (feats.length)   gsap.fromTo(feats,   { y: 40, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'power3.out', stagger: 0.07, clearProps: 'transform,scale' });
-   if (plans.length)   gsap.fromTo(plans,   { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', stagger: 0.12, clearProps: 'transform' });
-   if (faqs.length)    gsap.fromTo(faqs,    { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: 'power3.out', stagger: 0.07, clearProps: 'transform' });
-  }, 30);
- }
- }
+  /* 4. Fix GSAP inline styles — use requestAnimationFrame so the
+        display:none→block transition is fully painted before we touch styles */
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      /* Collect all animated elements inside this page */
+      var all = Array.from(target.querySelectorAll('.gsap-reveal, .gsap-feat, .gsap-plan, .gsap-faq'));
 
- /* Scroll to top */
- window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.gsap) {
+        /* Kill any running tweens and strip ALL inline styles GSAP set */
+        all.forEach(function(el) {
+          gsap.killTweensOf(el);
+          gsap.set(el, { clearProps: 'all' });
+        });
 
- /* Update active state on all nav items */
- document.querySelectorAll('#float-nav .fn-item').forEach(function(item) {
- var sec = item.getAttribute('data-section');
- if (sec === section) {
- item.classList.add('fn-active');
- } else {
- item.classList.remove('fn-active');
- /* Remove CTA active style interference */
- if (!item.classList.contains('fn-cta')) {
- item.classList.remove('fn-active');
- }
- }
- });
+        /* Now animate in with clearProps:'all' so nothing sticks after */
+        var reveals = target.querySelectorAll('.gsap-reveal');
+        var feats   = target.querySelectorAll('.gsap-feat');
+        var plans   = target.querySelectorAll('.gsap-plan');
+        var faqs    = target.querySelectorAll('.gsap-faq');
 
- /* Update hash without scroll jump */
- try { history.replaceState(null, '', '#' + section); } catch(e) {}
- }
+        if (reveals.length) gsap.fromTo(reveals, {y:30,opacity:0}, {y:0,opacity:1,duration:0.6,ease:'power3.out',stagger:0.07,clearProps:'all'});
+        if (feats.length)   gsap.fromTo(feats,   {y:40,opacity:0,scale:0.96}, {y:0,opacity:1,scale:1,duration:0.55,ease:'power3.out',stagger:0.06,clearProps:'all'});
+        if (plans.length)   gsap.fromTo(plans,   {y:50,opacity:0}, {y:0,opacity:1,duration:0.6,ease:'power3.out',stagger:0.1,clearProps:'all'});
+        if (faqs.length)    gsap.fromTo(faqs,    {x:-30,opacity:0}, {x:0,opacity:1,duration:0.45,ease:'power3.out',stagger:0.06,clearProps:'all'});
+      } else {
+        /* No GSAP — just make sure everything is visible */
+        all.forEach(function(el) {
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        });
+      }
+    });
+  });
 
- /* Intercept all float-nav clicks */
- document.getElementById('float-nav').addEventListener('click', function(e) {
- var item = e.target.closest('.fn-item');
- if (!item) return;
- var section = item.getAttribute('data-section');
- if (!section || !PAGE_MAP[section]) return;
- e.preventDefault();
- showPage(section);
- });
+  /* 5. Scroll to top */
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
- /* Handle direct URL hash on load */
- window.addEventListener('load', function() {
- var hash = window.location.hash.replace('#', '');
- if (hash && PAGE_MAP[hash]) {
- showPage(hash);
- } else {
- /* Default: show hero, mark it active */
- showPage('hero');
- }
- });
+  /* 6. Update active nav state */
+  document.querySelectorAll('#float-nav .fn-item').forEach(function(item) {
+    var sec = item.getAttribute('data-section');
+    if (sec === section) {
+      item.classList.add('fn-active');
+    } else {
+      item.classList.remove('fn-active');
+    }
+  });
 
- /* Trigger bar animation when reviews page is opened */
- var _reviewsAnimated = false;
- var _origShowPage = showPage;
- showPage = function(section) {
- _origShowPage(section);
- if (section === 'resenas' && !_reviewsAnimated) {
- _reviewsAnimated = true;
- setTimeout(function() {
- var box = document.getElementById('reviews-summary-box');
- if (box) {
- box.querySelectorAll('.rs-bar-fill').forEach(function(bar) {
- bar.style.width = bar.dataset.pct + '%';
- });
- }
- }, 200);
- }
- };
-})();
-</script>
+  /* 7. Update URL hash */
+  try { history.replaceState(null, '', '#' + section); } catch(e) {}
 
-<script>
-/* ── DATOS DE RESEÑAS CORTAS para marquee ── */
-const REVIEWS_LANE1 = [
- { text: "¡FPS por las nubes! No volvería atrás.", author: "Ruben_FPS", game: "Valorant", color: "purple", init: "R" },
- { text: "200 → 340 FPS en CS2. Simplemente increíble.", author: "XdarkSh0t", game: "CS2", color: "cyan", init: "X" },
- { text: "El mejor dinero que he gastado en gaming.", author: "ProGamer99", game: "Fortnite", color: "pink", init: "P" },
- { text: "Cero lag, cero stutters. Perfecto.", author: "LauraGames", game: "Apex", color: "green", init: "L" },
- { text: "Mi PC viejo rinde como si fuera nuevo.", author: "MiguelTech", game: "LoL", color: "purple", init: "M" },
- { text: "Stream sin drops por primera vez 🎉", author: "StreamQueen", game: "Twitch", color: "pink", init: "S" },
- { text: "Input lag mínimo, mis reacciones mejoraron.", author: "Zer0Delay", game: "Valorant", color: "cyan", init: "Z" },
- { text: "Instalé en 10 min y ya notaba la diferencia.", author: "QuickSetup", game: "CS2", color: "green", init: "Q" },
- { text: "Anti-cheat safe 100%, probado en torneo.", author: "TourneyAce", game: "Fortnite", color: "purple", init: "T" },
- { text: "Mi GPU se calienta menos. Sorprendente.", author: "CoolSystem", game: "Warzone", color: "cyan", init: "C" },
- { text: "De 90 FPS inestables a 180 estables. WOW.", author: "NightFrag", game: "Apex", color: "pink", init: "N" },
- { text: "Soporte técnico respondió en minutos.", author: "HappyUser", game: "LoL", color: "green", init: "H" },
-];
-const REVIEWS_LANE2 = [
- { text: "Jamás pensé que el software hiciera tanto.", author: "SkepticalG", game: "CS2", color: "cyan", init: "S" },
- { text: "Temps bajaron 15°C. La diferencia se nota.", author: "CoolFPS", game: "Warzone", color: "green", init: "C" },
- { text: "El restore funciona de maravilla si hay dudas.", author: "SafeGamer", game: "Valorant", color: "purple", init: "S" },
- { text: "Mi Intel i5 rinde como un i7 ahora.", author: "CPUWizard", game: "Apex", color: "pink", init: "C" },
- { text: "240 FPS constantes. Nunca tan suave.", author: "SilkySmooth", game: "CS2", color: "cyan", init: "S" },
- { text: "Recomendado por mi equipo completo.", author: "TeamCaptain", game: "Valorant", color: "purple", init: "T" },
- { text: "Sin microfreezes desde que lo instalé.", author: "NoFreeze_X", game: "Fortnite", color: "green", init: "N" },
- { text: "Precio justo por lo que ofrece. 10/10.", author: "ValueGamer", game: "LoL", color: "pink", init: "V" },
- { text: "Activé el plan pro y fue un antes y después.", author: "ProUpgrade", game: "Warzone", color: "cyan", init: "P" },
- { text: "FPS estables durante 5h de sesión. 🔥", author: "SessionKing", game: "Apex", color: "purple", init: "S" },
- { text: "RAM optimizada, todo va más fluido.", author: "RAMmaster", game: "CS2", color: "green", init: "R" },
- { text: "Lo usé el día del torneo y gané. ¡Gracias!", author: "WinnerGG", game: "Valorant", color: "pink", init: "W" },
-];
-
-function buildReviewCard(r) {
- return `<div class="rmc rmc--${r.color}">
- <div class="rmc-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
- <div class="rmc-text">"${r.text}"</div>
- <div class="rmc-author">
- <div class="rmc-avatar rmc--${r.color}" style="background:rgba(155,48,255,0.12)">${r.init}</div>
- <div>
- <div class="rmc-name">${r.author}</div>
- <div class="rmc-game">${r.game}</div>
- </div>
- </div>
- </div>`;
+  /* 8. Reviews bar animation */
+  if (section === 'resenas' && !_reviewsAnimated) {
+    _reviewsAnimated = true;
+    setTimeout(function() {
+      var box = document.getElementById('reviews-summary-box');
+      if (box) {
+        box.querySelectorAll('.rs-bar-fill').forEach(function(bar) {
+          bar.style.width = bar.dataset.pct + '%';
+        });
+      }
+    }, 300);
+  }
 }
 
-function populateLane(id, data) {
- const lane = document.getElementById(id);
- if (!lane) return;
- // Duplicate for seamless loop
- const doubled = [...data, ...data];
- lane.innerHTML = doubled.map(buildReviewCard).join('');
-}
-
-populateLane('rml-1', REVIEWS_LANE1);
-populateLane('rml-2', REVIEWS_LANE2);
-
-/* ── ACORDEÓN TESTIMONIOS ── */
-document.querySelectorAll('[data-testi]').forEach(function(item) {
- const header = item.querySelector('.testi-header');
- header.addEventListener('click', function() {
- const isOpen = item.classList.contains('t-open');
- // Close all
- document.querySelectorAll('[data-testi]').forEach(function(i) {
- i.classList.remove('t-open');
- });
- // Open clicked if was closed
- if (!isOpen) item.classList.add('t-open');
- });
+/* Intercept float-nav clicks */
+document.getElementById('float-nav').addEventListener('click', function(e) {
+  var item = e.target.closest('.fn-item');
+  if (!item) return;
+  var section = item.getAttribute('data-section');
+  if (!section || !PAGE_MAP[section]) return;
+  e.preventDefault();
+  showPage(section);
 });
 
-/* ── ANIMACIÓN BARRAS DE PUNTUACIÓN ── */
-const summaryBox = document.getElementById('reviews-summary-box');
-if (summaryBox) {
- const obs = new IntersectionObserver(function(entries) {
- entries.forEach(function(entry) {
- if (entry.isIntersecting) {
- entry.target.querySelectorAll('.rs-bar-fill').forEach(function(bar) {
- bar.style.width = bar.dataset.pct + '%';
- });
- obs.unobserve(entry.target);
- }
- });
- }, { threshold: 0.3 });
- obs.observe(summaryBox);
-}
+/* On load: show page from hash or default to hero */
+window.addEventListener('load', function() {
+  var hash = window.location.hash.replace('#', '');
+  showPage((hash && PAGE_MAP[hash]) ? hash : 'hero');
+});
 </script>
+
 
 </body>
 
