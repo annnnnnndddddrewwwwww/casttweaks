@@ -479,9 +479,9 @@ HEARTBEAT_BAN_MSG = (
     "Account Sharing detectado: licencia usada desde multiples IPs simultaneamente."
 )
 
-_PLAN_BASE = {"Basic": 5.0, "Pro": 10.0, "Lifetime": 15.0}
-_PLAN_XPM  = {"Basic": 1.0, "Pro": 1.5,  "Lifetime": 0.0}
-_MAX_DEVICES = {"Basic": 1, "Pro": 2, "Lifetime": 3}
+_PLAN_BASE = {"Basic": 5.0, "Pro": 10.0, "Lifetime": 39.99}
+_PLAN_XPM  = {"Basic": 2.0, "Pro": 3.5,  "Lifetime": 0.0}
+_MAX_DEVICES = {"Basic": 1, "Pro": 3, "Lifetime": 5}
 
 # ==================================================================
 # CIFRADO DE RESPUESTAS

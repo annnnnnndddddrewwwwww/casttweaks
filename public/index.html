@@ -2198,45 +2198,8 @@
  gsap.set('.hero-tag', { opacity: 0, y: 20 });
  gsap.set('#hero-logo-3d', { opacity: 0, x: 60 });
  gsap.set('#hero-title .line1, #hero-title .line2', { y: 0 });
- // ──────────────── SCROLL-TRIGGERED REVEALS ────────────────
- // NOTE: Using ScrollTrigger.create + onEnter instead of gsap.from() to
- // avoid GSAP setting opacity:0 as inline style on elements inside hidden
- // tabs (display:none) at load time — which would leave them invisible.
- gsap.utils.toArray('.gsap-reveal').forEach(function(el) {
- ScrollTrigger.create({
-  trigger: el, start: 'top 85%', once: true,
-  onEnter: function() {
-  gsap.fromTo(el, { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out' });
-  }
- });
- });
- ScrollTrigger.create({
- trigger: '#feat-grid', start: 'top 75%', once: true,
- onEnter: function() {
-  gsap.fromTo('.gsap-feat',
-  { y: 60, opacity: 0, scale: 0.94 },
-  { y: 0, opacity: 1, scale: 1, stagger: { amount: 0.6, grid: [2,3], from: 'start' }, duration: 0.8, ease: 'power3.out' }
-  );
- }
- });
- ScrollTrigger.create({
- trigger: '.plans-grid', start: 'top 80%', once: true,
- onEnter: function() {
-  gsap.fromTo('.gsap-plan',
-  { y: 80, opacity: 0 },
-  { y: 0, opacity: 1, stagger: 0.15, duration: 0.9, ease: 'power3.out' }
-  );
- }
- });
- ScrollTrigger.create({
- trigger: '#faq', start: 'top 80%', once: true,
- onEnter: function() {
-  gsap.fromTo('.gsap-faq',
-  { x: -40, opacity: 0 },
-  { x: 0, opacity: 1, stagger: 0.1, duration: 0.7, ease: 'power3.out' }
-  );
- }
- });
+ // ──────────────── SCROLL-TRIGGERED REVEALS (páginas externas) ────────────────
+ // Registrados desde pages.html tras el fetch, no aquí.
  gsap.to('#hero-title .line1', {
  scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 1.5 },
  x: -60, opacity: 0
