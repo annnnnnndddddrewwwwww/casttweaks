@@ -481,7 +481,7 @@ def _normalize_license_type(raw: str) -> str:
     sin importar la capitalización recibida del cliente."""
     if not raw:
         return "Basic"
-    return _LICENSE_TYPE_NORMALIZE.get(raw.strip().lower(), "")
+    return _LICENSE_TYPE_NORMALIZE.get(raw.strip().lower(), "Basic")
 RESPONSE_TS_TOLERANCE = 30
 REQUEST_TS_TOLERANCE = 120
 HEARTBEAT_WINDOW = 360
@@ -904,7 +904,7 @@ def verify():
         "username": decoded["username"],
         "expires": decoded["expires"],
         "days_left": days_left,
-        "license_type": _normalize_license_type(entry.get("license_type") or "Basic") or "Basic",
+        "license_type": _normalize_license_type(entry.get("license_type") or ""),
         "max_devices": max_devices,
     })
 
