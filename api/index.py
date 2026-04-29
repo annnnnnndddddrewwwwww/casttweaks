@@ -472,6 +472,16 @@ def _version_tuple(v: str) -> tuple:
         return (0, 0, 0)
 
 LICENSE_TYPES = ["Basic", "Pro", "Lifetime"]
+
+# Mapa de normalización: acepta cualquier capitalización y devuelve el tipo canónico
+_LICENSE_TYPE_NORMALIZE = {t.lower(): t for t in ["Basic", "Pro", "Lifetime"]}
+
+def _normalize_license_type(raw: str) -> str:
+    """Normaliza el tipo de licencia al valor canónico (Basic/Pro/Lifetime)
+    sin importar la capitalización recibida del cliente."""
+    if not raw:
+        return "Basic"
+    return _LICENSE_TYPE_NORMALIZE.get(raw.strip().lower(), "")
 RESPONSE_TS_TOLERANCE = 30
 REQUEST_TS_TOLERANCE = 120
 HEARTBEAT_WINDOW = 360
@@ -894,7 +904,7 @@ def verify():
         "username": decoded["username"],
         "expires": decoded["expires"],
         "days_left": days_left,
-        "license_type": entry.get("license_type", "Basic"),
+        "license_type": _normalize_license_type(entry.get("license_type") or "Basic") or "Basic",
         "max_devices": max_devices,
     })
 
@@ -1235,7 +1245,7 @@ def issue_free():
     username      = _sanitize((data.get("username")      or "").strip(), "username")
     email         = _sanitize((data.get("email")         or "").strip(), "email")
     days          = int(data.get("days", 30))
-    license_type  = (data.get("license_type") or "Basic").strip().capitalize()
+    license_type  = _normalize_license_type(data.get("license_type") or "")
     discount_code = (data.get("discount_code") or "").strip().upper()
 
     if not username:
@@ -1322,7 +1332,7 @@ def issue_public():
     username     = _sanitize((data.get("username")       or "").strip(), "username")
     email        = _sanitize((data.get("email")          or "").strip(), "email")
     days         = int(data.get("days", 30))
-    license_type = (data.get("license_type") or "Basic").strip().capitalize()
+    license_type = _normalize_license_type(data.get("license_type") or "")
     order_id     = (data.get("paypal_order_id") or "").strip()
     discount_code = (data.get("discount_code") or "").strip().upper()
 
