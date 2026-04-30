@@ -1071,6 +1071,167 @@
  /* #app opacity se maneja arriba */
 
 
+ /* ═══════════════════════════════════════════════════
+    VIDEO SCROLL MODULE — CSS
+    Integrado entre el marquee y la sección #features
+  ═══════════════════════════════════════════════════ */
+
+  /*
+   * EXPORTACIÓN ÓPTIMA DEL .MP4 PARA SCRUBBING INVERSO:
+   *
+   * ffmpeg -i input.mp4 -vcodec libx264 -g 1 -crf 23
+   *        -pix_fmt yuv420p -movflags faststart -an output.mp4
+   *
+   * -g 1 = 1 keyframe por frame → scrubbing inverso perfecto.
+   * Alternativa balanceada: -g 15
+   * Nunca uses el GOP por defecto (250) para video-scroll.
+   */
+
+  .vs-wrapper {
+    position: relative;
+    height: 400vh;
+    background: #000;
+    isolation: isolate;
+  }
+  .vs-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .vs-video-frame {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    height: 100vh;
+    border-radius: 28px;
+    overflow: hidden;
+    background: #000;
+    box-shadow:
+      0 0 0 1px rgba(155,48,255,0.15),
+      0 40px 120px rgba(0,0,0,0.8),
+      0 0 80px rgba(155,48,255,0.08);
+    transform: scale(0.92);
+    transform-origin: center center;
+    will-change: transform;
+  }
+  #vs-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+  .vs-placeholder {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 60% 40%, #1a0035 0%, #000 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease;
+    z-index: 1;
+  }
+  .vs-placeholder.vs-loaded { opacity: 0; pointer-events: none; }
+  .vs-loader-ring {
+    width: 48px; height: 48px;
+    border: 2px solid rgba(155,48,255,0.2);
+    border-top-color: #9b30ff;
+    border-radius: 50%;
+    animation: vs-spin 0.9s linear infinite;
+  }
+  @keyframes vs-spin { to { transform: rotate(360deg); } }
+
+  /* ── Overlay de texto por stages ── */
+  .vs-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  .vs-stage {
+    grid-area: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: clamp(2rem, 5vw, 4rem);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1);
+    will-change: opacity, transform;
+  }
+  .vs-stage.vs-stage-active { opacity: 1; transform: translateY(0); }
+  .vs-stage::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .vs-stage-eyebrow {
+    font-family: var(--mono);
+    font-size: clamp(9px, 1.1vw, 11px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .vs-stage-eyebrow::before {
+    content: '';
+    display: block;
+    width: 28px; height: 1px;
+    background: var(--purple);
+    flex-shrink: 0;
+  }
+  .vs-stage-title {
+    font-family: var(--display);
+    font-size: clamp(2.4rem, 5.5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+  .vs-stage-title em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--purple), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .vs-stage-body {
+    font-family: var(--body);
+    font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+    line-height: 1.65;
+    color: rgba(240,232,255,0.7);
+    max-width: 480px;
+  }
+  .vs-progress-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--purple2), var(--magenta));
+    width: 0%;
+    z-index: 5;
+    box-shadow: 0 0 8px var(--magenta);
+    transition: width 0.05s linear;
+  }
+  @media (max-width: 768px) {
+    .vs-video-frame { border-radius: 0; max-width: 100%; }
+    .vs-stage-title { font-size: clamp(2rem, 9vw, 3rem); }
+  }
+
  /* ═══════════════════════════════ HAMBURGER MENU ═══════════════════════════════ */
  .nav-hamburger {
  display: none;
@@ -1818,6 +1979,52 @@
  </div>
 
 </div><!-- /page-hero -->
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║   VIDEO SCROLL MODULE — CastTweaks®                        ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<section class="vs-wrapper" id="vs-section" aria-label="Demostración de CastTweaks en acción">
+  <div class="vs-sticky">
+    <div class="vs-video-frame" id="vs-frame">
+
+      <div class="vs-placeholder" id="vs-placeholder">
+        <div class="vs-loader-ring"></div>
+      </div>
+
+      <video
+        id="vs-video"
+        src="public/2026-04-30_09_58_53.mp4"
+        muted
+        playsinline
+        preload="auto"
+        tabindex="-1"
+        aria-hidden="true"
+      ></video>
+
+      <div class="vs-overlay" aria-hidden="true">
+        <div class="vs-stage" data-from="0.0" data-to="0.28">
+          <span class="vs-stage-eyebrow">Performance</span>
+          <h2 class="vs-stage-title">Tu PC.<br><em>Reinventado.</em></h2>
+          <p class="vs-stage-body">CastTweaks® elimina la latencia invisible que frena tu sistema. Más FPS. Más velocidad. Sin compromisos.</p>
+        </div>
+        <div class="vs-stage" data-from="0.28" data-to="0.62">
+          <span class="vs-stage-eyebrow">Optimización en tiempo real</span>
+          <h2 class="vs-stage-title">Un clic.<br><em>Todo cambia.</em></h2>
+          <p class="vs-stage-body">Ajustes profundos del kernel, prioridades de CPU y configuración de red aplicados en segundos.</p>
+        </div>
+        <div class="vs-stage" data-from="0.62" data-to="1.0">
+          <span class="vs-stage-eyebrow">Resultados garantizados</span>
+          <h2 class="vs-stage-title"><em>+40% FPS</em><br>o te devolvemos<br>el dinero.</h2>
+          <p class="vs-stage-body">Más de 12.000 usuarios verificados. Sin riesgo. Prueba gratuita disponible ahora.</p>
+        </div>
+      </div>
+
+      <div class="vs-progress-bar" id="vs-progress-bar"></div>
+
+    </div>
+  </div>
+</section>
+<!-- FIN VIDEO SCROLL MODULE -->
 
 <!-- ═══ PÁGINAS EXTERNAS: inlineadas directamente (sin fetch) ═══ -->
 <!-- ═══════════════════════════════════════════════════════════
@@ -3005,6 +3212,171 @@
  closeMobileMenu();
  }, { passive: true });
  }
+</script>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║   VIDEO SCROLL ENGINE — VANILLA JS (sin dependencias)      ║ -->
+<!-- ║   RAF loop · Lerp · Scroll-linked scrubbing                ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── CONFIG ───────────────────────────────────────────────────
+   * lerpFactor: suavidad del scrubbing.
+   *   0.08 = muy suave (sensación Apple)
+   *   0.20 = más reactivo
+   *   Ajustable en caliente: CastTweaksVideoScroll.setLerp(n)
+   * ─────────────────────────────────────────────────────────── */
+  var CFG = {
+    lerpFactor:      0.12,
+    frameScaleStart: 0.92,
+    frameScaleEnd:   1.00,
+    frameScaleRange: 0.08,
+  };
+
+  /* ── REFS ─────────────────────────────────────────────────── */
+  var wrapper     = document.getElementById('vs-section');
+  var video       = document.getElementById('vs-video');
+  var frame       = document.getElementById('vs-frame');
+  var progressBar = document.getElementById('vs-progress-bar');
+  var placeholder = document.getElementById('vs-placeholder');
+
+  if (!wrapper || !video) return;
+
+  /* ── STATE ────────────────────────────────────────────────── */
+  var targetTime  = 0;
+  var currentTime = 0;
+  var rafId       = null;
+  var isReady     = false;
+  var duration    = 0;
+
+  /* ── UTILS ────────────────────────────────────────────────── */
+  function mapRange(v, inMin, inMax, outMin, outMax) {
+    var c = Math.max(inMin, Math.min(inMax, v));
+    return outMin + ((c - inMin) / (inMax - inMin)) * (outMax - outMin);
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  /* ── SCROLL → PROGRESS (0.0 – 1.0) ────────────────────────
+   * Fórmula:
+   *   progress = -rect.top / (wrapperHeight - viewportHeight)
+   *
+   * Cuando el wrapper toca el top del viewport → progress 0
+   * Cuando el wrapper está casi al final → progress 1
+   * ─────────────────────────────────────────────────────────── */
+  function getScrollProgress() {
+    var rect       = wrapper.getBoundingClientRect();
+    var scrollable = wrapper.offsetHeight - window.innerHeight;
+    return Math.max(0, Math.min(1, -rect.top / scrollable));
+  }
+
+  /* ── STAGES ───────────────────────────────────────────────── */
+  var stages = Array.from(document.querySelectorAll('.vs-stage'));
+  var stageData = stages.map(function(el) {
+    return {
+      el:   el,
+      from: parseFloat(el.dataset.from || 0),
+      to:   parseFloat(el.dataset.to   || 1),
+    };
+  });
+
+  function updateStages(p) {
+    stageData.forEach(function(s) {
+      s.el.classList.toggle('vs-stage-active', p >= s.from && p <= s.to);
+    });
+  }
+
+  /* ── FRAME SCALE (zoom-in reveal al entrar en la sección) ── */
+  function updateFrameScale(p) {
+    if (!frame) return;
+    var scale = mapRange(p, 0, CFG.frameScaleRange, CFG.frameScaleStart, CFG.frameScaleEnd);
+    frame.style.transform = 'scale(' + scale + ')';
+  }
+
+  /* ── RAF LOOP ─────────────────────────────────────────────
+   * Por qué RAF y no evento scroll:
+   *   Los scroll events son irregulares y corren en el hilo
+   *   principal, causando stuttering cuando el browser está
+   *   ocupado. El RAF corre sincronizado con el repaint,
+   *   siempre en el momento óptimo para manipular el DOM.
+   *
+   * Por qué lerp:
+   *   Cada frame, currentTime avanza un lerpFactor% de la
+   *   distancia restante hasta targetTime. Esto crea una
+   *   amortiguación tipo muelle que da la sensación de masa
+   *   característica de los video-scroll de Apple.
+   *
+   * Por qué threshold 0.001:
+   *   Asignar video.currentTime tiene coste incluso si el
+   *   valor no cambia visiblemente. El threshold evita writes
+   *   innecesarios cuando el video ya llegó al objetivo.
+   * ─────────────────────────────────────────────────────────── */
+  function tick() {
+    rafId = requestAnimationFrame(tick);
+    if (!isReady) return;
+
+    var progress = getScrollProgress();
+    targetTime   = progress * duration;
+
+    var prev    = currentTime;
+    currentTime = lerp(currentTime, targetTime, CFG.lerpFactor);
+
+    if (Math.abs(currentTime - prev) > 0.001) {
+      video.currentTime = Math.max(0, Math.min(duration, currentTime));
+    }
+
+    var uiP = duration > 0 ? currentTime / duration : 0;
+
+    if (progressBar) progressBar.style.width = (uiP * 100).toFixed(2) + '%';
+
+    updateStages(uiP);
+    updateFrameScale(progress);
+  }
+
+  /* ── INIT ────────────────────────────────────────────────── */
+  function init() {
+    duration = video.duration;
+    if (!duration || isNaN(duration)) return;
+
+    isReady = true;
+    currentTime = targetTime = 0;
+    video.currentTime = 0;
+    video.pause();
+
+    if (placeholder) placeholder.classList.add('vs-loaded');
+  }
+
+  video.addEventListener('loadedmetadata', init);
+  if (video.readyState >= 1) init();
+
+  /* ── Page Visibility: pausar RAF cuando la pestaña está oculta ── */
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    } else {
+      if (!rafId) tick();
+    }
+  });
+
+  window.addEventListener('beforeunload', function() {
+    if (rafId) cancelAnimationFrame(rafId);
+  });
+
+  /* ── API PÚBLICA ─────────────────────────────────────────── */
+  window.CastTweaksVideoScroll = {
+    getProgress:    function() { return isReady && duration > 0 ? currentTime / duration : 0; },
+    getCurrentTime: function() { return currentTime; },
+    seekTo: function(t) {
+      if (!isReady) return;
+      currentTime = Math.max(0, Math.min(duration, t));
+      video.currentTime = currentTime;
+    },
+    setLerp: function(v) { CFG.lerpFactor = Math.max(0.01, Math.min(1, v)); },
+  };
+
+  tick();
+})();
 </script>
 
 </body>
